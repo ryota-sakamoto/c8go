@@ -26,5 +26,6 @@ function clean() {
 
 check 0 0
 check 42 42
+check 21 "5+20-4"
 
 clean
