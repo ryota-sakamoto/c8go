@@ -1,11 +1,8 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
-	"strconv"
-	"unicode"
 )
 
 func main() {
@@ -13,8 +10,8 @@ func main() {
 		panic("Invalud args len")
 	}
 
-	n := os.Args[1]
-	num, err := parseInt(&n)
+	s := os.Args[1]
+	token, err := Tokenize(s)
 	if err != nil {
 		panic(err)
 	}
@@ -23,41 +20,29 @@ func main() {
 	fmt.Println(".global main")
 	fmt.Println("main:")
 
-	fmt.Println(fmt.Sprintf("    mov rax, %d", num))
-	for len(n) != 0 {
-		c := n[0]
-		n = n[1:]
-		num, _ := parseInt(&n)
+	fn, err := token.ConsumeNumber()
+	if err != nil {
+		panic(err)
+	}
 
-		switch c {
-		case '+':
-			fmt.Println(fmt.Sprintf("    add rax, %d", num))
-		case '-':
-			fmt.Println(fmt.Sprintf("    sub rax, %d", num))
-		default:
-			panic(fmt.Sprintf("Invalid char: %c", n[0]))
+	fmt.Println(fmt.Sprintf("    mov rax, %d", fn))
+	for !token.isEOF() {
+		if token.Expect('+') {
+			n, e := token.ConsumeNumber()
+			if e != nil {
+				panic(e)
+			}
+			fmt.Println(fmt.Sprintf("    add rax, %d", n))
+		}
+
+		if token.Expect('-') {
+			n, e := token.ConsumeNumber()
+			if e != nil {
+				panic(e)
+			}
+			fmt.Println(fmt.Sprintf("    sub rax, %d", n))
 		}
 	}
 
 	fmt.Println("    ret")
-}
-
-func parseInt(s *string) (int, error) {
-	t := []rune{}
-	index := 0
-	for _, c := range *s {
-		if unicode.IsDigit(c) {
-			t = append(t, c)
-			index++
-		} else {
-			break
-		}
-	}
-
-	if index == 0 {
-		return 0, errors.New("")
-	}
-
-	*s = (*s)[index:]
-	return strconv.Atoi(string(t))
 }

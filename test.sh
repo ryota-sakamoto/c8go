@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function run() {
-    go run main.go $@ > a.s
+    go run *.go "$@" > a.s
     docker run -v $(pwd):/home -w /home --rm gcc-image gcc -o a a.s
     docker run -v $(pwd):/home -w /home --rm gcc-image /home/a
 }
@@ -10,7 +10,7 @@ function check() {
     expected="$1"
     input="$2"
 
-    run $input
+    run "$input"
     actual="$?"
 
     if [ "$expected" = "$actual" ]; then
@@ -27,5 +27,6 @@ function clean() {
 check 0 0
 check 42 42
 check 21 "5+20-4"
+check 41 " 12 + 34 - 5 "
 
 clean
