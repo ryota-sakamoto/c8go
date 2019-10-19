@@ -1,4 +1,4 @@
-package main
+package node
 
 import (
 	"github.com/ryota-sakamoto/c8go/token"
@@ -33,21 +33,21 @@ func (nk NodeKind) String() string {
 }
 
 type Node struct {
-	kind  NodeKind
-	left  *Node
-	right *Node
-	val   int
+	Kind  NodeKind
+	Left  *Node
+	Right *Node
+	Val   int
 }
 
 func (n Node) IsNum() bool {
-	return n.kind == ND_NUM
+	return n.Kind == ND_NUM
 }
 
 func NewNode(kind NodeKind, left *Node, right *Node) *Node {
 	node := Node{
-		kind:  kind,
-		left:  left,
-		right: right,
+		Kind:  kind,
+		Left:  left,
+		Right: right,
 	}
 
 	return &node
@@ -55,8 +55,8 @@ func NewNode(kind NodeKind, left *Node, right *Node) *Node {
 
 func NewNodeNum(n int) *Node {
 	node := Node{
-		kind: ND_NUM,
-		val:  n,
+		Kind: ND_NUM,
+		Val:  n,
 	}
 
 	return &node

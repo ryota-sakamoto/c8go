@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ryota-sakamoto/c8go/node"
 	"github.com/ryota-sakamoto/c8go/token"
 )
 
@@ -18,7 +19,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	parser := NewNodeParser(token)
+	parser := node.NewNodeParser(token)
 	node, err := parser.Expr()
 	if err != nil {
 		fmt.Println(err)
@@ -34,26 +35,26 @@ func main() {
 	fmt.Println("    ret")
 }
 
-func gen(node *Node) {
-	if node.IsNum() {
-		fmt.Println(fmt.Sprintf("    push %d", node.val))
+func gen(n *node.Node) {
+	if n.IsNum() {
+		fmt.Println(fmt.Sprintf("    push %d", n.Val))
 		return
 	}
 
-	gen(node.left)
-	gen(node.right)
+	gen(n.Left)
+	gen(n.Right)
 
 	fmt.Println("    pop rdi")
 	fmt.Println("    pop rax")
 
-	switch node.kind {
-	case ND_ADD:
+	switch n.Kind {
+	case node.ND_ADD:
 		fmt.Println("    add rax, rdi")
-	case ND_SUB:
+	case node.ND_SUB:
 		fmt.Println("    sub rax, rdi")
-	case ND_MUL:
+	case node.ND_MUL:
 		fmt.Println("    imul rax, rdi")
-	case ND_DIV:
+	case node.ND_DIV:
 		fmt.Println("    cqo")
 		fmt.Println("    idiv rdi")
 	}
