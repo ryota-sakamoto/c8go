@@ -19,7 +19,7 @@ func ParseInt(s *string) (int, error) {
 	}
 
 	if index == 0 {
-		return 0, errors.New("counter is zero")
+		return 0, errors.New("not number")
 	}
 
 	*s = (*s)[index:]

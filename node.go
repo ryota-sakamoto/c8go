@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 type NodeKind int
 
 const (
@@ -79,21 +77,27 @@ func (np *NodeParser) Expr() (*Node, error) {
 	}
 
 	for {
-		if np.token.Expect('+') {
+		err := np.token.Expect('+')
+		if err == nil {
 			right, err := np.Mul()
 			if err != nil {
 				return nil, err
 			}
 			node = NewNode(ND_ADD, node, right)
-		} else if np.token.Expect('-') {
+			continue
+		}
+
+		err = np.token.Expect('-')
+		if err == nil {
 			right, err := np.Mul()
 			if err != nil {
 				return nil, err
 			}
 			node = NewNode(ND_SUB, node, right)
-		} else {
-			return node, nil
+			continue
 		}
+
+		return node, nil
 	}
 }
 
@@ -104,32 +108,40 @@ func (np *NodeParser) Mul() (*Node, error) {
 	}
 
 	for {
-		if np.token.Expect('*') {
+		err := np.token.Expect('*')
+		if err == nil {
 			right, err := np.Primary()
 			if err != nil {
 				return nil, err
 			}
 			node = NewNode(ND_MUL, node, right)
-		} else if np.token.Expect('/') {
+			continue
+		}
+
+		err = np.token.Expect('/')
+		if err == nil {
 			right, err := np.Primary()
 			if err != nil {
 				return nil, err
 			}
 			node = NewNode(ND_DIV, node, right)
-		} else {
-			return node, nil
 		}
+
+		return node, nil
 	}
 }
 
 func (np *NodeParser) Primary() (*Node, error) {
-	if np.token.Expect('(') {
+	err := np.token.Expect('(')
+	if err == nil {
 		node, err := np.Expr()
 		if err != nil {
 			return nil, err
 		}
-		if !np.token.Expect(')') {
-			return nil, fmt.Errorf("want ), but not")
+
+		err = np.token.Expect(')')
+		if err != nil {
+			return nil, err
 		}
 
 		return node, nil

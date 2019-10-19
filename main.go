@@ -13,12 +13,14 @@ func main() {
 	s := os.Args[1]
 	token, err := Tokenize(s)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	parser := NewNodeParser(token)
 	node, err := parser.Expr()
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	fmt.Println(".intel_syntax noprefix")

@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/ryota-sakamoto/c8go/util"
 )
@@ -34,6 +35,9 @@ type Token struct {
 	next *Token
 	val  int
 	s    string
+
+	input string
+	pos   int
 }
 
 func (t *Token) isNumber() bool {
@@ -49,7 +53,7 @@ func (t *Token) isEOF() bool {
 }
 
 func (t Token) String() string {
-	return fmt.Sprintf("kind: %s, val: %d, s: %s", t.kind, t.val, t.s)
+	return fmt.Sprintf("s: %q, pos: %d, kind: %s, val: %d, ", t.s, t.pos, t.kind, t.val)
 }
 
 func (t *Token) Consume() error {
@@ -61,13 +65,14 @@ func (t *Token) Consume() error {
 	t.val = next.val
 	t.s = next.s
 	t.next = next.next
+	t.pos = next.pos
 
 	return nil
 }
 
 func (t *Token) ConsumeNumber() (int, error) {
 	if !t.isNumber() {
-		return 0, fmt.Errorf("current is not number: %+v", t)
+		return 0, t.NewTokenError("current is not number: %+v", t)
 	}
 	v := t.val
 	if err := t.Consume(); err != nil {
@@ -77,18 +82,21 @@ func (t *Token) ConsumeNumber() (int, error) {
 	return v, nil
 }
 
-func (t *Token) Expect(c byte) bool {
+func (t *Token) Expect(c byte) error {
 	if !t.isReserved() || t.s[0] != c {
-		return false
+		return t.NewTokenError("current is not reversed: %+v", t)
 	}
 	if err := t.Consume(); err != nil {
-		return false
+		return err
 	}
-	return true
+	return nil
 }
 
 func Tokenize(s string) (*Token, error) {
-	token := Token{}
+	token := Token{
+		input: s,
+		pos:   0,
+	}
 	current := &token
 	for len(s) > 0 {
 		switch s[0] {
@@ -101,24 +109,39 @@ func Tokenize(s string) (*Token, error) {
 			tmp := s
 			num, err := util.ParseInt(&s)
 			if err != nil {
-				return nil, err
+				return nil, tokenError(token.input, current.pos+1, err.Error())
 			}
 			current = newToken(TK_NUM, current, tmp)
 			current.val = num
 		}
+		current.pos++
 	}
 	current = newToken(TK_EOF, current, s)
+	current.pos++
 
 	return token.next, nil
 }
 
 func newToken(kind TokenKind, current *Token, s string) *Token {
 	next := Token{
-		kind: kind,
-		next: nil,
-		s:    s,
+		kind:  kind,
+		next:  nil,
+		input: current.input,
+		s:     s,
+		pos:   current.pos,
 	}
 	current.next = &next
 
 	return &next
+}
+
+func (t *Token) NewTokenError(format string, a ...interface{}) error {
+	return tokenError(t.input, t.pos, format, a...)
+}
+
+func tokenError(input string, pos int, format string, a ...interface{}) error {
+	s := `%s
+%s
+%s`
+	return fmt.Errorf(s, input, strings.Repeat(" ", pos-1)+"^", fmt.Sprintf(format, a...))
 }
