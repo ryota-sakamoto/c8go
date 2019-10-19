@@ -1,5 +1,9 @@
 package main
 
+import (
+	"github.com/ryota-sakamoto/c8go/token"
+)
+
 type NodeKind int
 
 const (
@@ -59,10 +63,10 @@ func NewNodeNum(n int) *Node {
 }
 
 type NodeParser struct {
-	token *Token
+	token *token.Token
 }
 
-func NewNodeParser(token *Token) *NodeParser {
+func NewNodeParser(token *token.Token) *NodeParser {
 	np := NodeParser{
 		token: token,
 	}

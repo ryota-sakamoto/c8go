@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/ryota-sakamoto/c8go/token"
 )
 
 func main() {
@@ -11,7 +13,7 @@ func main() {
 	}
 
 	s := os.Args[1]
-	token, err := Tokenize(s)
+	token, err := token.Tokenize(s)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
