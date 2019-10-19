@@ -31,5 +31,6 @@ check 41 " 12 + 34 - 5 "
 check 47 "5+6*7"
 check 15 "5*(9-6)"
 check 4 "(3+5)/2"
+check 10 "-10+20"
 
 clean

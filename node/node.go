@@ -106,7 +106,7 @@ func (np *NodeParser) Expr() (*Node, error) {
 }
 
 func (np *NodeParser) Mul() (*Node, error) {
-	node, err := np.Primary()
+	node, err := np.Unary()
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (np *NodeParser) Mul() (*Node, error) {
 	for {
 		err := np.token.Expect('*')
 		if err == nil {
-			right, err := np.Primary()
+			right, err := np.Unary()
 			if err != nil {
 				return nil, err
 			}
@@ -124,7 +124,7 @@ func (np *NodeParser) Mul() (*Node, error) {
 
 		err = np.token.Expect('/')
 		if err == nil {
-			right, err := np.Primary()
+			right, err := np.Unary()
 			if err != nil {
 				return nil, err
 			}
@@ -133,6 +133,24 @@ func (np *NodeParser) Mul() (*Node, error) {
 
 		return node, nil
 	}
+}
+
+func (np *NodeParser) Unary() (*Node, error) {
+	err := np.token.Expect('+')
+	if err == nil {
+		return np.Primary()
+	}
+
+	err = np.token.Expect('-')
+	if err == nil {
+		right, err := np.Primary()
+		if err != nil {
+			return nil, err
+		}
+		return NewNode(ND_SUB, NewNodeNum(0), right), nil
+	}
+
+	return np.Primary()
 }
 
 func (np *NodeParser) Primary() (*Node, error) {
