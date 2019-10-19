@@ -94,7 +94,7 @@ func Tokenize(s string) (*Token, error) {
 		switch s[0] {
 		case ' ':
 			s = s[1:]
-		case '+', '-':
+		case '+', '-', '*', '/', '(', ')':
 			current = newToken(TK_RESERVED, current, s)
 			s = s[1:]
 		default:

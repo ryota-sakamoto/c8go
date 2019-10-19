@@ -15,34 +15,44 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	parser := NewNodeParser(token)
+	node, err := parser.Expr()
+	if err != nil {
+		panic(err)
+	}
 
 	fmt.Println(".intel_syntax noprefix")
 	fmt.Println(".global main")
 	fmt.Println("main:")
 
-	fn, err := token.ConsumeNumber()
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(fmt.Sprintf("    mov rax, %d", fn))
-	for !token.isEOF() {
-		if token.Expect('+') {
-			n, e := token.ConsumeNumber()
-			if e != nil {
-				panic(e)
-			}
-			fmt.Println(fmt.Sprintf("    add rax, %d", n))
-		}
-
-		if token.Expect('-') {
-			n, e := token.ConsumeNumber()
-			if e != nil {
-				panic(e)
-			}
-			fmt.Println(fmt.Sprintf("    sub rax, %d", n))
-		}
-	}
-
+	gen(node)
+	fmt.Println("    pop rax")
 	fmt.Println("    ret")
+}
+
+func gen(node *Node) {
+	if node.IsNum() {
+		fmt.Println(fmt.Sprintf("    push %d", node.val))
+		return
+	}
+
+	gen(node.left)
+	gen(node.right)
+
+	fmt.Println("    pop rdi")
+	fmt.Println("    pop rax")
+
+	switch node.kind {
+	case ND_ADD:
+		fmt.Println("    add rax, rdi")
+	case ND_SUB:
+		fmt.Println("    sub rax, rdi")
+	case ND_MUL:
+		fmt.Println("    imul rax, rdi")
+	case ND_DIV:
+		fmt.Println("    cqo")
+		fmt.Println("    idiv rdi")
+	}
+
+	fmt.Println("    push rax")
 }
