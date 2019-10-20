@@ -33,4 +33,11 @@ check 15 "5*(9-6)"
 check 4 "(3+5)/2"
 check 10 "-10+20"
 
+check 1 " 1  == 1"
+check 0 " 1  != 1"
+check 0 " 3  < 1"
+check 0 " 5  > 9"
+check 1 " 5  >= 4"
+check 1 " 4  <= 4"
+
 clean

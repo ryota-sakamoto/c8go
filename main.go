@@ -57,6 +57,22 @@ func gen(n *node.Node) {
 	case node.ND_DIV:
 		fmt.Println("    cqo")
 		fmt.Println("    idiv rdi")
+	case node.ND_EQ:
+		fmt.Println("    cmp rax, rdi")
+		fmt.Println("    sete al")
+		fmt.Println("    movzb rax, al")
+	case node.ND_NE:
+		fmt.Println("    cmp rax, rdi")
+		fmt.Println("    setne al")
+		fmt.Println("    movzb rax, al")
+	case node.ND_LT:
+		fmt.Println("    cmp rax, rdi")
+		fmt.Println("    setl al")
+		fmt.Println("    movzb rax, al")
+	case node.ND_LE:
+		fmt.Println("    cmp rax, rdi")
+		fmt.Println("    setle al")
+		fmt.Println("    movzb rax, al")
 	}
 
 	fmt.Println("    push rax")

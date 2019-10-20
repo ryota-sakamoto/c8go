@@ -13,6 +13,13 @@ const (
 	ND_MUL
 	ND_DIV
 	ND_NUM
+
+	ND_GT // > , but not use
+	ND_GE // >=, but not use
+	ND_LT // <
+	ND_LE // <=
+	ND_EQ // ==
+	ND_NE // !=
 )
 
 func (nk NodeKind) String() string {
@@ -75,13 +82,99 @@ func NewNodeParser(token *token.Token) *NodeParser {
 }
 
 func (np *NodeParser) Expr() (*Node, error) {
+	return np.Equality()
+}
+
+func (np *NodeParser) Equality() (*Node, error) {
+	node, err := np.Relational()
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		err := np.token.Expect("==")
+		if err == nil {
+			right, err := np.Relational()
+			if err != nil {
+				return nil, err
+			}
+			node = NewNode(ND_EQ, node, right)
+			continue
+		}
+
+		err = np.token.Expect("!=")
+		if err == nil {
+			right, err := np.Relational()
+			if err != nil {
+				return nil, err
+			}
+			node = NewNode(ND_NE, node, right)
+			continue
+		}
+
+		return node, nil
+	}
+}
+
+func (np *NodeParser) Relational() (*Node, error) {
+	node, err := np.Add()
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		err := np.token.Expect("<")
+		if err == nil {
+			right, err := np.Add()
+			if err != nil {
+				return nil, err
+			}
+			node = NewNode(ND_LT, node, right)
+			continue
+		}
+
+		err = np.token.Expect("<=")
+		if err == nil {
+			right, err := np.Add()
+			if err != nil {
+				return nil, err
+			}
+			node = NewNode(ND_LE, node, right)
+			continue
+		}
+
+		err = np.token.Expect(">")
+		if err == nil {
+			right, err := np.Add()
+			if err != nil {
+				return nil, err
+			}
+			node = NewNode(ND_LT, right, node)
+			continue
+		}
+
+		err = np.token.Expect(">=")
+		if err == nil {
+			right, err := np.Add()
+			if err != nil {
+				return nil, err
+			}
+			node = NewNode(ND_LE, right, node)
+			continue
+		}
+
+		return node, nil
+	}
+}
+
+func (np *NodeParser) Add() (*Node, error) {
 	node, err := np.Mul()
 	if err != nil {
 		return nil, err
 	}
 
 	for {
-		err := np.token.Expect('+')
+		err := np.token.Expect("+")
 		if err == nil {
 			right, err := np.Mul()
 			if err != nil {
@@ -91,7 +184,7 @@ func (np *NodeParser) Expr() (*Node, error) {
 			continue
 		}
 
-		err = np.token.Expect('-')
+		err = np.token.Expect("-")
 		if err == nil {
 			right, err := np.Mul()
 			if err != nil {
@@ -112,7 +205,7 @@ func (np *NodeParser) Mul() (*Node, error) {
 	}
 
 	for {
-		err := np.token.Expect('*')
+		err := np.token.Expect("*")
 		if err == nil {
 			right, err := np.Unary()
 			if err != nil {
@@ -122,7 +215,7 @@ func (np *NodeParser) Mul() (*Node, error) {
 			continue
 		}
 
-		err = np.token.Expect('/')
+		err = np.token.Expect("/")
 		if err == nil {
 			right, err := np.Unary()
 			if err != nil {
@@ -136,12 +229,12 @@ func (np *NodeParser) Mul() (*Node, error) {
 }
 
 func (np *NodeParser) Unary() (*Node, error) {
-	err := np.token.Expect('+')
+	err := np.token.Expect("+")
 	if err == nil {
 		return np.Primary()
 	}
 
-	err = np.token.Expect('-')
+	err = np.token.Expect("-")
 	if err == nil {
 		right, err := np.Primary()
 		if err != nil {
@@ -154,14 +247,14 @@ func (np *NodeParser) Unary() (*Node, error) {
 }
 
 func (np *NodeParser) Primary() (*Node, error) {
-	err := np.token.Expect('(')
+	err := np.token.Expect("(")
 	if err == nil {
 		node, err := np.Expr()
 		if err != nil {
 			return nil, err
 		}
 
-		err = np.token.Expect(')')
+		err = np.token.Expect(")")
 		if err != nil {
 			return nil, err
 		}

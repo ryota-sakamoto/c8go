@@ -35,6 +35,7 @@ type Token struct {
 	next *Token
 	val  int
 	s    string
+	len  int
 
 	input string
 	pos   int
@@ -53,7 +54,7 @@ func (t *Token) isEOF() bool {
 }
 
 func (t Token) String() string {
-	return fmt.Sprintf("s: %q, pos: %d, kind: %s, val: %d, ", t.s, t.pos, t.kind, t.val)
+	return fmt.Sprintf("s: %q, pos: %d, kind: %s, val: %d, tl: %d", t.s, t.pos, t.kind, t.val, t.len)
 }
 
 func (t *Token) Consume() error {
@@ -66,6 +67,7 @@ func (t *Token) Consume() error {
 	t.s = next.s
 	t.next = next.next
 	t.pos = next.pos
+	t.len = next.len
 
 	return nil
 }
@@ -82,8 +84,8 @@ func (t *Token) ConsumeNumber() (int, error) {
 	return v, nil
 }
 
-func (t *Token) Expect(c byte) error {
-	if !t.isReserved() || t.s[0] != c {
+func (t *Token) Expect(c string) error {
+	if !t.isReserved() || t.s[0:t.len] != c {
 		return t.NewTokenError("current is not reversed: %+v", t)
 	}
 	if err := t.Consume(); err != nil {
@@ -98,36 +100,59 @@ func Tokenize(s string) (*Token, error) {
 		pos:   0,
 	}
 	current := &token
+	tl := 1
+	back := false
 	for len(s) > 0 {
-		switch s[0] {
-		case ' ':
+		switch s[:tl] {
+		case " ":
 			s = s[1:]
-		case '+', '-', '*', '/', '(', ')':
-			current = newToken(TK_RESERVED, current, s)
+		case "+", "-", "*", "/", "(", ")":
+			current = newToken(TK_RESERVED, current, s, 1)
 			s = s[1:]
+		case "<", ">", "=", "!":
+			if !back {
+				tl++
+			} else {
+				current = newToken(TK_RESERVED, current, s, 1)
+				s = s[1:]
+
+				back = false
+			}
+		case "<=", ">=", "==", "!=":
+			current = newToken(TK_RESERVED, current, s, 2)
+			s = s[2:]
+
+			tl = 1
 		default:
+			if tl != 1 {
+				tl = 1
+				back = true
+				continue
+			}
+
 			tmp := s
 			num, err := util.ParseInt(&s)
 			if err != nil {
 				return nil, tokenError(token.input, current.pos+1, err.Error())
 			}
-			current = newToken(TK_NUM, current, tmp)
+			current = newToken(TK_NUM, current, tmp, 1)
 			current.val = num
 		}
 		current.pos++
 	}
-	current = newToken(TK_EOF, current, s)
+	current = newToken(TK_EOF, current, s, 1)
 	current.pos++
 
 	return token.next, nil
 }
 
-func newToken(kind TokenKind, current *Token, s string) *Token {
+func newToken(kind TokenKind, current *Token, s string, len int) *Token {
 	next := Token{
 		kind:  kind,
 		next:  nil,
 		input: current.input,
 		s:     s,
+		len:   len,
 		pos:   current.pos,
 	}
 	current.next = &next
