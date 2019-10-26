@@ -13,6 +13,7 @@ type TokenKind int
 const (
 	Unknown TokenKind = iota + 1
 	TK_RESERVED
+	TK_IDENT
 	TK_NUM
 	TK_EOF
 )
@@ -21,6 +22,8 @@ func (tk TokenKind) String() string {
 	switch tk {
 	case TK_RESERVED:
 		return "TK_RESERVED"
+	case TK_IDENT:
+		return "TK_IDENT"
 	case TK_NUM:
 		return "TK_NUM"
 	case TK_EOF:
@@ -49,8 +52,12 @@ func (t *Token) isReserved() bool {
 	return t.kind == TK_RESERVED
 }
 
-func (t *Token) isEOF() bool {
+func (t *Token) IsEOF() bool {
 	return t.kind == TK_EOF
+}
+
+func (t *Token) GetHead() byte {
+	return t.s[0]
 }
 
 func (t Token) String() string {
@@ -62,12 +69,7 @@ func (t *Token) Consume() error {
 		return errors.New("next is nil")
 	}
 	next := t.next
-	t.kind = next.kind
-	t.val = next.val
-	t.s = next.s
-	t.next = next.next
-	t.pos = next.pos
-	t.len = next.len
+	*t = *next
 
 	return nil
 }
@@ -103,10 +105,12 @@ func Tokenize(s string) (*Token, error) {
 	tl := 1
 	back := false
 	for len(s) > 0 {
-		switch s[:tl] {
+		c := s[:tl]
+
+		switch c {
 		case " ":
 			s = s[1:]
-		case "+", "-", "*", "/", "(", ")":
+		case "+", "-", "*", "/", "(", ")", ";":
 			current = newToken(TK_RESERVED, current, s, 1)
 			s = s[1:]
 		case "<", ">", "=", "!":
@@ -127,6 +131,13 @@ func Tokenize(s string) (*Token, error) {
 			if tl != 1 {
 				tl = 1
 				back = true
+				continue
+			}
+
+			if 'a' <= c[0] && c[0] <= 'z' {
+				current = newToken(TK_IDENT, current, s, 1)
+				current.pos++
+				s = s[1:]
 				continue
 			}
 

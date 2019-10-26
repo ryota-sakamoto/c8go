@@ -20,13 +20,18 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
 	parser := node.NewNodeParser(token)
-	node, err := parser.Expr()
+	node, err := parser.Program()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	generator := code.NewGenerator(node)
-	generator.Run()
+	generator := code.NewGenerator()
+	generator.Before()
+	for _, n := range node {
+		generator.Run(n)
+	}
+	generator.After()
 }

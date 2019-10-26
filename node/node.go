@@ -12,7 +12,10 @@ const (
 	ND_SUB
 	ND_MUL
 	ND_DIV
+	ND_LVAR
 	ND_NUM
+
+	ND_ASSIGN
 
 	ND_GT // > , but not use
 	ND_GE // >=, but not use
@@ -40,10 +43,11 @@ func (nk NodeKind) String() string {
 }
 
 type Node struct {
-	Kind  NodeKind
-	Left  *Node
-	Right *Node
-	Val   int
+	Kind   NodeKind
+	Left   *Node
+	Right  *Node
+	Val    int
+	Offset int
 }
 
 func (n Node) IsNum() bool {
@@ -69,6 +73,15 @@ func NewNodeNum(n int) *Node {
 	return &node
 }
 
+func NewNodeLVar(offset int) *Node {
+	node := Node{
+		Kind:   ND_LVAR,
+		Offset: offset,
+	}
+
+	return &node
+}
+
 type NodeParser struct {
 	token *token.Token
 }
@@ -81,8 +94,47 @@ func NewNodeParser(token *token.Token) *NodeParser {
 	return &np
 }
 
+func (np *NodeParser) Program() ([]*Node, error) {
+	result := []*Node{}
+	for !np.token.IsEOF() {
+		node, err := np.Stmt()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, node)
+	}
+	return result, nil
+}
+
+func (np *NodeParser) Stmt() (*Node, error) {
+	node, err := np.Expr()
+	if err != nil {
+		return nil, err
+	}
+
+	return node, np.token.Expect(";")
+}
+
 func (np *NodeParser) Expr() (*Node, error) {
-	return np.Equality()
+	return np.Assign()
+}
+
+func (np *NodeParser) Assign() (*Node, error) {
+	node, err := np.Equality()
+	if err != nil {
+		return nil, err
+	}
+
+	err = np.token.Expect("=")
+	if err == nil {
+		right, err := np.Assign()
+		if err != nil {
+			return nil, err
+		}
+		node = NewNode(ND_ASSIGN, node, right)
+	}
+
+	return node, nil
 }
 
 func (np *NodeParser) Equality() (*Node, error) {
@@ -261,6 +313,12 @@ func (np *NodeParser) Primary() (*Node, error) {
 
 		return node, nil
 	}
+
 	n, err := np.token.ConsumeNumber()
-	return NewNodeNum(n), err
+	if err == nil {
+		return NewNodeNum(n), nil
+	}
+
+	b := np.token.GetHead()
+	return NewNodeLVar((int(b) - 97) * 8), np.token.Consume()
 }

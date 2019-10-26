@@ -10,26 +10,50 @@ type Generator struct {
 	node *node.Node
 }
 
-func NewGenerator(n *node.Node) *Generator {
-	return &Generator{
-		node: n,
-	}
+func NewGenerator() *Generator {
+	return &Generator{}
 }
 
-func (g *Generator) Run() {
+func (g *Generator) Before() {
 	fmt.Println(".intel_syntax noprefix")
 	fmt.Println(".global main")
 	fmt.Println("main:")
 
-	gen(g.node)
+	fmt.Println("    push rbp")
+	fmt.Println("    mov rbp, rsp")
+	fmt.Println("    sub rsp, 208")
+}
 
-	fmt.Println("    pop rax")
+func (g *Generator) After() {
+	fmt.Println("    mov rsp, rbp")
+	fmt.Println("    pop rbp")
 	fmt.Println("    ret")
 }
 
+func (g *Generator) Run(n *node.Node) {
+	gen(n)
+	fmt.Println("    pop rax")
+}
+
 func gen(n *node.Node) {
-	if n.IsNum() {
+	switch n.Kind {
+	case node.ND_NUM:
 		fmt.Println(fmt.Sprintf("    push %d", n.Val))
+		return
+	case node.ND_LVAR:
+		genLabel(n)
+		fmt.Println("    pop rax")
+		fmt.Println("    mov rax, [rax]")
+		fmt.Println("    push rax")
+		return
+	case node.ND_ASSIGN:
+		genLabel(n.Left)
+		gen(n.Right)
+
+		fmt.Println("    pop rdi")
+		fmt.Println("    pop rax")
+		fmt.Println("    mov [rax], rdi")
+		fmt.Println("    push rdi")
 		return
 	}
 
@@ -67,5 +91,14 @@ func gen(n *node.Node) {
 		fmt.Println("    movzb rax, al")
 	}
 
+	fmt.Println("    push rax")
+}
+
+func genLabel(n *node.Node) {
+	if n.Kind != node.ND_LVAR {
+		panic("")
+	}
+	fmt.Println("    mov rax, rbp")
+	fmt.Println(fmt.Sprintf("    sub rax, %d", n.Offset))
 	fmt.Println("    push rax")
 }
