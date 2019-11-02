@@ -319,6 +319,30 @@ func (np *NodeParser) Primary() (*Node, error) {
 		return NewNodeNum(n), nil
 	}
 
-	b := np.token.GetHead()
-	return NewNodeLVar((int(b) - 97) * 8), np.token.Consume()
+	name := np.token.GetVariableName()
+	if _, ok := locals.get(name); !ok {
+		locals.set(name)
+	}
+	offset, _ := locals.get(name)
+	return NewNodeLVar(offset), np.token.Consume()
+}
+
+var locals = localVariale{
+	vars:      map[string]int{},
+	maxOffset: 0,
+}
+
+type localVariale struct {
+	vars      map[string]int
+	maxOffset int
+}
+
+func (l localVariale) get(name string) (int, bool) {
+	v, ok := l.vars[name]
+	return v, ok
+}
+
+func (l *localVariale) set(name string) {
+	l.maxOffset = l.maxOffset + 8
+	l.vars[name] = l.maxOffset
 }

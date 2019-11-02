@@ -3,6 +3,7 @@ package token
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/ryota-sakamoto/c8go/util"
@@ -56,8 +57,8 @@ func (t *Token) IsEOF() bool {
 	return t.kind == TK_EOF
 }
 
-func (t *Token) GetHead() byte {
-	return t.s[0]
+func (t *Token) GetVariableName() string {
+	return t.s[:t.len]
 }
 
 func (t Token) String() string {
@@ -102,45 +103,54 @@ func Tokenize(s string) (*Token, error) {
 		pos:   0,
 	}
 	current := &token
-	tl := 1
-	back := false
 	for len(s) > 0 {
-		c := s[:tl]
-
-		switch c {
-		case " ":
+		if s[:1] == " " {
 			s = s[1:]
-		case "+", "-", "*", "/", "(", ")", ";":
+			current.pos++
+			continue
+		}
+
+		isReserved := false
+		for _, v := range []string{"+", "-", "*", "/", "(", ")", ";"} {
+			if s[:1] == v {
+				isReserved = true
+				break
+			}
+		}
+		if isReserved {
 			current = newToken(TK_RESERVED, current, s, 1)
 			s = s[1:]
-		case "<", ">", "=", "!":
-			if !back {
-				tl++
+			current.pos++
+			continue
+		}
+
+		isComparisonReserved := false
+		for _, v := range []string{"<", ">", "=", "!"} {
+			if s[:1] == v {
+				isComparisonReserved = true
+				break
+			}
+		}
+		if isComparisonReserved {
+			f := false
+			for _, v := range []string{"<=", ">=", "==", "!="} {
+				if s[:2] == v {
+					f = true
+					break
+				}
+			}
+			if f {
+				current = newToken(TK_RESERVED, current, s, 2)
+				s = s[2:]
 			} else {
 				current = newToken(TK_RESERVED, current, s, 1)
 				s = s[1:]
-
-				back = false
 			}
-		case "<=", ">=", "==", "!=":
-			current = newToken(TK_RESERVED, current, s, 2)
-			s = s[2:]
+			current.pos++
+			continue
+		}
 
-			tl = 1
-		default:
-			if tl != 1 {
-				tl = 1
-				back = true
-				continue
-			}
-
-			if 'a' <= c[0] && c[0] <= 'z' {
-				current = newToken(TK_IDENT, current, s, 1)
-				current.pos++
-				s = s[1:]
-				continue
-			}
-
+		if _, err := strconv.Atoi(s[:1]); err == nil {
 			tmp := s
 			num, err := util.ParseInt(&s)
 			if err != nil {
@@ -148,8 +158,28 @@ func Tokenize(s string) (*Token, error) {
 			}
 			current = newToken(TK_NUM, current, tmp, 1)
 			current.val = num
+			current.pos++
+			continue
 		}
+
+		tmp := s
+		varName := ""
+		for len(s) > 0 {
+			c := s[:1]
+			if 'a' <= c[0] && c[0] <= 'z' {
+				s = s[1:]
+				varName += c
+				continue
+			}
+			break
+		}
+		if len(varName) == 0 {
+			return nil, tokenError(token.input, current.pos+1, "varName is empty")
+		}
+
+		current = newToken(TK_IDENT, current, tmp, len(varName))
 		current.pos++
+		continue
 	}
 	current = newToken(TK_EOF, current, s, 1)
 	current.pos++
