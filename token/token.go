@@ -16,6 +16,7 @@ const (
 	TK_RETURN
 	TK_IF
 	TK_ELSE
+	TK_WHILE
 	TK_IDENT
 	TK_NUM
 	TK_EOF
@@ -54,7 +55,11 @@ func (t *Token) isNumber() bool {
 }
 
 func (t *Token) isReserved() bool {
-	return t.kind == TK_RESERVED || t.kind == TK_RETURN || t.kind == TK_IF || t.kind == TK_ELSE
+	return t.kind == TK_RESERVED ||
+		t.kind == TK_RETURN ||
+		t.kind == TK_IF ||
+		t.kind == TK_ELSE ||
+		t.kind == TK_WHILE
 }
 
 func (t *Token) IsEOF() bool {
@@ -183,6 +188,13 @@ func Tokenize(s string) (*Token, error) {
 			current = newToken(TK_RETURN, current, s, 6)
 			s = s[6:]
 			current.pos += 6
+			continue
+		}
+
+		if len(s) >= 5 && s[:5] == "while" && !util.IsAlnum(s[5]) {
+			current = newToken(TK_WHILE, current, s, 5)
+			s = s[5:]
+			current.pos += 5
 			continue
 		}
 

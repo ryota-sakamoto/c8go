@@ -90,6 +90,19 @@ func gen(n *node.Node) {
 		fmt.Println(".LendXXX:")
 
 		return
+	case node.ND_WHILE:
+		fmt.Println(".LbeginXXX:")
+		gen(n.Left)
+
+		fmt.Println("    pop rax")
+		fmt.Println("    cmp rax, 0")
+		fmt.Println("    je .LendXXX")
+
+		gen(n.Right)
+
+		fmt.Println("    jmp .LbeginXXX")
+		fmt.Println(".LendXXX:")
+		return
 	}
 
 	gen(n.Left)

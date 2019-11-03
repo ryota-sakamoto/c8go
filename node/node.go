@@ -30,6 +30,7 @@ const (
 	ND_IF      // if
 	ND_ELSE    // else
 	ND_IF_ELSE // if & else
+	ND_WHILE   // while
 )
 
 func (nk NodeKind) String() string {
@@ -167,6 +168,32 @@ func (np *NodeParser) Stmt() (*Node, error) {
 		}
 
 		return NewNode(ND_IF, node1, ifNode), nil
+	}
+
+	if np.token.Expect("while") {
+		if err := np.token.ConsumeReserved("while"); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		if err := np.token.ConsumeReserved("("); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		node, err := np.Expr()
+		if err != nil {
+			return nil, err
+		}
+
+		if err := np.token.ConsumeReserved(")"); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		s, err := np.Stmt()
+		if err != nil {
+			return nil, err
+		}
+
+		return NewNode(ND_WHILE, node, s), nil
 	}
 
 	node, err := np.Expr()

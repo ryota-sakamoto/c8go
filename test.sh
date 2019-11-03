@@ -2,6 +2,11 @@
 
 function run() {
     go run *.go "$@" > a.s
+    if [ $? = 1 ]; then
+        cat a.s
+        return
+    fi
+
     docker run -v $(pwd):/home -w /home --rm gcc-image gcc -o a a.s
     docker run -v $(pwd):/home -w /home --rm gcc-image /home/a
 }
@@ -66,5 +71,10 @@ if (c == 2)\
 else\
     return 10;\
 return c;"
+
+check 10 "counter = 0;\
+while (counter < 10) \
+    counter = counter + 1;\
+return counter;"
 
 clean
