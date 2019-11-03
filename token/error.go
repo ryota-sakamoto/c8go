@@ -28,7 +28,7 @@ func (t tokenError) Error() string {
 %s
 ----------`
 
-	return fmt.Sprintf(s, t.errorType, t.input, strings.Repeat(" ", t.pos-1)+"^", t.message)
+	return fmt.Sprintf(s, t.errorType, t.input, strings.Repeat("~", t.pos-1)+"^", t.message)
 }
 
 func (t *tokenError) New(input string, message string, pos int) error {

@@ -53,7 +53,7 @@ func (t *Token) isNumber() bool {
 }
 
 func (t *Token) isReserved() bool {
-	return t.kind == TK_RESERVED || t.kind == TK_RETURN || t.kind == TK_RETURN
+	return t.kind == TK_RESERVED || t.kind == TK_RETURN || t.kind == TK_IF
 }
 
 func (t *Token) IsEOF() bool {
@@ -99,10 +99,10 @@ func (t *Token) ConsumeNumber() (int, error) {
 
 func (t *Token) ConsumeReserved(c string) error {
 	if !t.isReserved() {
-		return t.NewTokenError(NotReserverdError, "current is not reversed: %+v", t)
+		return t.NewTokenError(NotReserverdError, "current is not reversed: %+v, want: %+v", t, c)
 	}
 	if !t.Expect(c) {
-		return t.NewTokenError(NotExpectedError, "current is not expected reversed: %+v", t)
+		return t.NewTokenError(NotExpectedError, "current is not expected reversed: %+v, want: %+v", t, c)
 	}
 	if err := t.Consume(); err != nil {
 		return err

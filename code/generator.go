@@ -63,6 +63,17 @@ func gen(n *node.Node) {
 		fmt.Println("    pop rbp")
 		fmt.Println("    ret")
 		return
+	case node.ND_IF:
+		gen(n.Left)
+
+		fmt.Println("    pop rax")
+		fmt.Println("    cmp rax, 0")
+		fmt.Println("    je .LendXXX")
+
+		gen(n.Right)
+
+		fmt.Println(".LendXXX:")
+		return
 	}
 
 	gen(n.Left)

@@ -27,6 +27,7 @@ const (
 	ND_NE // !=
 
 	ND_RETURN // return
+	ND_IF     // if
 )
 
 func (nk NodeKind) String() string {
@@ -113,15 +114,48 @@ func (np *NodeParser) Program() ([]*Node, error) {
 }
 
 func (np *NodeParser) Stmt() (*Node, error) {
-	re := np.token.ConsumeReserved("return")
+	if np.token.Expect("return") {
+		if err := np.token.ConsumeReserved("return"); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		node, err := np.Expr()
+		if err != nil {
+			return nil, err
+		}
+
+		return NewNode(ND_RETURN, nil, node), np.token.ConsumeReserved(";")
+	}
+
+	if np.token.Expect("if") {
+		if err := np.token.ConsumeReserved("if"); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		if err := np.token.ConsumeReserved("("); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		node1, err := np.Expr()
+		if err != nil {
+			return nil, err
+		}
+
+		if err := np.token.ConsumeReserved(")"); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		node2, err := np.Stmt()
+		if err != nil {
+			return nil, err
+		}
+
+		return NewNode(ND_IF, node1, node2), nil
+	}
 
 	node, err := np.Expr()
 	if err != nil {
 		return nil, err
-	}
-
-	if re == nil {
-		node = NewNode(ND_RETURN, nil, node)
 	}
 
 	return node, np.token.ConsumeReserved(";")
@@ -137,8 +171,12 @@ func (np *NodeParser) Assign() (*Node, error) {
 		return nil, err
 	}
 
-	err = np.token.ConsumeReserved("=")
-	if err == nil {
+	if np.token.Expect("=") {
+		err = np.token.ConsumeReserved("=")
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
 		right, err := np.Assign()
 		if err != nil {
 			return nil, err
@@ -156,8 +194,12 @@ func (np *NodeParser) Equality() (*Node, error) {
 	}
 
 	for {
-		err := np.token.ConsumeReserved("==")
-		if err == nil {
+		if np.token.Expect("==") {
+			err := np.token.ConsumeReserved("==")
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+
 			right, err := np.Relational()
 			if err != nil {
 				return nil, err
@@ -166,8 +208,12 @@ func (np *NodeParser) Equality() (*Node, error) {
 			continue
 		}
 
-		err = np.token.ConsumeReserved("!=")
-		if err == nil {
+		if np.token.Expect("!=") {
+			err := np.token.ConsumeReserved("!=")
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+
 			right, err := np.Relational()
 			if err != nil {
 				return nil, err
@@ -187,8 +233,12 @@ func (np *NodeParser) Relational() (*Node, error) {
 	}
 
 	for {
-		err := np.token.ConsumeReserved("<")
-		if err == nil {
+		if np.token.Expect("<") {
+			err := np.token.ConsumeReserved("<")
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+
 			right, err := np.Add()
 			if err != nil {
 				return nil, err
@@ -197,8 +247,12 @@ func (np *NodeParser) Relational() (*Node, error) {
 			continue
 		}
 
-		err = np.token.ConsumeReserved("<=")
-		if err == nil {
+		if np.token.Expect("<=") {
+			err := np.token.ConsumeReserved("<=")
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+
 			right, err := np.Add()
 			if err != nil {
 				return nil, err
@@ -207,8 +261,12 @@ func (np *NodeParser) Relational() (*Node, error) {
 			continue
 		}
 
-		err = np.token.ConsumeReserved(">")
-		if err == nil {
+		if np.token.Expect(">") {
+			err := np.token.ConsumeReserved(">")
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+
 			right, err := np.Add()
 			if err != nil {
 				return nil, err
@@ -217,8 +275,12 @@ func (np *NodeParser) Relational() (*Node, error) {
 			continue
 		}
 
-		err = np.token.ConsumeReserved(">=")
-		if err == nil {
+		if np.token.Expect(">=") {
+			err := np.token.ConsumeReserved(">=")
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+
 			right, err := np.Add()
 			if err != nil {
 				return nil, err
@@ -238,8 +300,12 @@ func (np *NodeParser) Add() (*Node, error) {
 	}
 
 	for {
-		err := np.token.ConsumeReserved("+")
-		if err == nil {
+		if np.token.Expect("+") {
+			err := np.token.ConsumeReserved("+")
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+
 			right, err := np.Mul()
 			if err != nil {
 				return nil, err
@@ -248,8 +314,12 @@ func (np *NodeParser) Add() (*Node, error) {
 			continue
 		}
 
-		err = np.token.ConsumeReserved("-")
-		if err == nil {
+		if np.token.Expect("-") {
+			err := np.token.ConsumeReserved("-")
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+
 			right, err := np.Mul()
 			if err != nil {
 				return nil, err
@@ -269,8 +339,12 @@ func (np *NodeParser) Mul() (*Node, error) {
 	}
 
 	for {
-		err := np.token.ConsumeReserved("*")
-		if err == nil {
+		if np.token.Expect("*") {
+			err := np.token.ConsumeReserved("*")
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+
 			right, err := np.Unary()
 			if err != nil {
 				return nil, err
@@ -279,8 +353,12 @@ func (np *NodeParser) Mul() (*Node, error) {
 			continue
 		}
 
-		err = np.token.ConsumeReserved("/")
-		if err == nil {
+		if np.token.Expect("/") {
+			err := np.token.ConsumeReserved("/")
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+
 			right, err := np.Unary()
 			if err != nil {
 				return nil, err
@@ -298,8 +376,12 @@ func (np *NodeParser) Unary() (*Node, error) {
 		return np.Primary()
 	}
 
-	err = np.token.ConsumeReserved("-")
-	if err == nil {
+	if np.token.Expect("-") {
+		err = np.token.ConsumeReserved("-")
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
 		right, err := np.Primary()
 		if err != nil {
 			return nil, err
@@ -311,8 +393,12 @@ func (np *NodeParser) Unary() (*Node, error) {
 }
 
 func (np *NodeParser) Primary() (*Node, error) {
-	err := np.token.ConsumeReserved("(")
-	if err == nil {
+	if np.token.Expect("(") {
+		err := np.token.ConsumeReserved("(")
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
 		node, err := np.Expr()
 		if err != nil {
 			return nil, err
@@ -339,7 +425,7 @@ func (np *NodeParser) Primary() (*Node, error) {
 		locals.set(name)
 	}
 	offset, _ := locals.get(name)
-	return NewNodeLVar(offset), np.token.Consume()
+	return NewNodeLVar(offset), errors.WithStack(np.token.Consume())
 }
 
 var locals = localVariale{
