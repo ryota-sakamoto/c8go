@@ -103,6 +103,11 @@ func gen(n *node.Node) {
 		fmt.Println("    jmp .LbeginXXX")
 		fmt.Println(".LendXXX:")
 		return
+	case node.ND_BLOCK:
+		for _, n := range n.Block {
+			gen(n)
+		}
+		return
 	}
 
 	gen(n.Left)

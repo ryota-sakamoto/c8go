@@ -31,6 +31,8 @@ const (
 	ND_ELSE    // else
 	ND_IF_ELSE // if & else
 	ND_WHILE   // while
+
+	ND_BLOCK // {}
 )
 
 func (nk NodeKind) String() string {
@@ -56,6 +58,7 @@ type Node struct {
 	Kind   NodeKind
 	Left   *Node
 	Right  *Node
+	Block  []*Node
 	Val    int
 	Offset int
 }
@@ -69,6 +72,15 @@ func NewNode(kind NodeKind, left *Node, right *Node) *Node {
 		Kind:  kind,
 		Left:  left,
 		Right: right,
+	}
+
+	return &node
+}
+
+func NewNodeBlock(block []*Node) *Node {
+	node := Node{
+		Kind:  ND_BLOCK,
+		Block: block,
 	}
 
 	return &node
@@ -117,6 +129,28 @@ func (np *NodeParser) Program() ([]*Node, error) {
 }
 
 func (np *NodeParser) Stmt() (*Node, error) {
+	if np.token.Expect("{") {
+		if err := np.token.ConsumeReserved("{"); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		block := []*Node{}
+		for !np.token.Expect("}") {
+			node, err := np.Stmt()
+			if err != nil {
+				return nil, err
+			}
+
+			block = append(block, node)
+		}
+
+		if err := np.token.ConsumeReserved("}"); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		return NewNodeBlock(block), nil
+	}
+
 	if np.token.Expect("return") {
 		if err := np.token.ConsumeReserved("return"); err != nil {
 			return nil, errors.WithStack(err)

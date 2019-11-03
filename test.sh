@@ -57,24 +57,27 @@ check 56 "a=1;\
 b = a + 27;\
 return b * 2;"
 
-check 0 "if (0)\
-    return 1;\
+check 0 "if (0) return 1;\
 return 0;"
 check 6 "a = 5; \
-if (a == 5) \
-    a = a + 1;\
+if (a == 5) a = a + 1;\
 return a;"
 
 check 4 "c = 2;\
-if (c == 2)\
-    c = 4;\
-else\
-    return 10;\
+if (c == 2) c = 4;\
+else return 10;\
 return c;"
 
 check 10 "counter = 0;\
-while (counter < 10) \
-    counter = counter + 1;\
+while (counter < 10) counter = counter + 1;\
 return counter;"
+
+check 225 "a = 3;\
+b = 5;\
+if (1) {\
+a = a * b;\
+b = a * a;\
+}\
+return b;"
 
 clean
