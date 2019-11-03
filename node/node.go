@@ -23,6 +23,8 @@ const (
 	ND_LE // <=
 	ND_EQ // ==
 	ND_NE // !=
+
+	ND_RETURN // return
 )
 
 func (nk NodeKind) String() string {
@@ -37,6 +39,8 @@ func (nk NodeKind) String() string {
 		return "ND_DIV"
 	case ND_NUM:
 		return "ND_NUM"
+	case ND_RETURN:
+		return "ND_RETURN"
 	default:
 		return "Unknown"
 	}
@@ -107,9 +111,15 @@ func (np *NodeParser) Program() ([]*Node, error) {
 }
 
 func (np *NodeParser) Stmt() (*Node, error) {
+	re := np.token.Expect("return")
+
 	node, err := np.Expr()
 	if err != nil {
 		return nil, err
+	}
+
+	if re == nil {
+		node = NewNode(ND_RETURN, nil, node)
 	}
 
 	return node, np.token.Expect(";")
@@ -319,7 +329,10 @@ func (np *NodeParser) Primary() (*Node, error) {
 		return NewNodeNum(n), nil
 	}
 
-	name := np.token.GetVariableName()
+	name, err := np.token.GetVariableName()
+	if err != nil {
+		return nil, err
+	}
 	if _, ok := locals.get(name); !ok {
 		locals.set(name)
 	}

@@ -14,6 +14,7 @@ type TokenKind int
 const (
 	Unknown TokenKind = iota + 1
 	TK_RESERVED
+	TK_RETURN
 	TK_IDENT
 	TK_NUM
 	TK_EOF
@@ -23,6 +24,8 @@ func (tk TokenKind) String() string {
 	switch tk {
 	case TK_RESERVED:
 		return "TK_RESERVED"
+	case TK_RETURN:
+		return "TK_RETURN"
 	case TK_IDENT:
 		return "TK_IDENT"
 	case TK_NUM:
@@ -50,15 +53,18 @@ func (t *Token) isNumber() bool {
 }
 
 func (t *Token) isReserved() bool {
-	return t.kind == TK_RESERVED
+	return t.kind == TK_RESERVED || t.kind == TK_RETURN
 }
 
 func (t *Token) IsEOF() bool {
 	return t.kind == TK_EOF
 }
 
-func (t *Token) GetVariableName() string {
-	return t.s[:t.len]
+func (t *Token) GetVariableName() (string, error) {
+	if t.kind != TK_IDENT {
+		return "", t.NewTokenError("current is not variable: %+v", t)
+	}
+	return t.s[:t.len], nil
 }
 
 func (t Token) String() string {
@@ -142,11 +148,19 @@ func Tokenize(s string) (*Token, error) {
 			if f {
 				current = newToken(TK_RESERVED, current, s, 2)
 				s = s[2:]
+				current.pos += 2
 			} else {
 				current = newToken(TK_RESERVED, current, s, 1)
 				s = s[1:]
+				current.pos++
 			}
-			current.pos++
+			continue
+		}
+
+		if len(s) >= 6 && s[:6] == "return" && !util.IsAlnum(s[6]) {
+			current = newToken(TK_RETURN, current, s, 6)
+			s = s[6:]
+			current.pos += 6
 			continue
 		}
 
@@ -166,7 +180,7 @@ func Tokenize(s string) (*Token, error) {
 		varName := ""
 		for len(s) > 0 {
 			c := s[:1]
-			if 'a' <= c[0] && c[0] <= 'z' {
+			if util.IsAlnum(c[0]) {
 				s = s[1:]
 				varName += c
 				continue

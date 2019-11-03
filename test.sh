@@ -43,6 +43,7 @@ check 1 " 4  <= 4;"
 check 3 "a=3;a;"
 check 17 "a = 3; b = a + 14; b;"
 
-check 6 "foo = 1; bar = 2 + 3; foo + bar;"
+check 20 "foo = 1; bar = 2 + 17; foo + bar;"
+check 56 "a=1; b = a + 27; return b * 2;"
 
 clean

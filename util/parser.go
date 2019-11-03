@@ -25,3 +25,10 @@ func ParseInt(s *string) (int, error) {
 	*s = (*s)[index:]
 	return strconv.Atoi(string(t))
 }
+
+func IsAlnum(c byte) bool {
+	return ('a' <= c && c <= 'z') ||
+		('A' <= c && c <= 'Z') ||
+		('0' <= c && c <= '9') ||
+		('_' == c)
+}
