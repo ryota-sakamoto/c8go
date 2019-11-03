@@ -26,8 +26,10 @@ const (
 	ND_EQ // ==
 	ND_NE // !=
 
-	ND_RETURN // return
-	ND_IF     // if
+	ND_RETURN  // return
+	ND_IF      // if
+	ND_ELSE    // else
+	ND_IF_ELSE // if & else
 )
 
 func (nk NodeKind) String() string {
@@ -145,12 +147,26 @@ func (np *NodeParser) Stmt() (*Node, error) {
 			return nil, errors.WithStack(err)
 		}
 
-		node2, err := np.Stmt()
+		ifNode, err := np.Stmt()
 		if err != nil {
 			return nil, err
 		}
 
-		return NewNode(ND_IF, node1, node2), nil
+		if np.token.Expect("else") {
+			if err := np.token.ConsumeReserved("else"); err != nil {
+				return nil, errors.WithStack(err)
+			}
+
+			elseNode, err := np.Stmt()
+			if err != nil {
+				return nil, err
+			}
+
+			ifNode = NewNode(ND_ELSE, ifNode, elseNode)
+			return NewNode(ND_IF_ELSE, node1, ifNode), nil
+		}
+
+		return NewNode(ND_IF, node1, ifNode), nil
 	}
 
 	node, err := np.Expr()
