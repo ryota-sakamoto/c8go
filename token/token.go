@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/ryota-sakamoto/c8go/util"
 )
@@ -15,6 +14,7 @@ const (
 	Unknown TokenKind = iota + 1
 	TK_RESERVED
 	TK_RETURN
+	TK_IF
 	TK_IDENT
 	TK_NUM
 	TK_EOF
@@ -53,7 +53,7 @@ func (t *Token) isNumber() bool {
 }
 
 func (t *Token) isReserved() bool {
-	return t.kind == TK_RESERVED || t.kind == TK_RETURN
+	return t.kind == TK_RESERVED || t.kind == TK_RETURN || t.kind == TK_RETURN
 }
 
 func (t *Token) IsEOF() bool {
@@ -62,13 +62,17 @@ func (t *Token) IsEOF() bool {
 
 func (t *Token) GetVariableName() (string, error) {
 	if t.kind != TK_IDENT {
-		return "", t.NewTokenError("current is not variable: %+v", t)
+		return "", t.NewTokenError(NotVariableError, "current is not variable: %+v", t)
 	}
 	return t.s[:t.len], nil
 }
 
 func (t Token) String() string {
 	return fmt.Sprintf("s: %q, pos: %d, kind: %s, val: %d, tl: %d", t.s, t.pos, t.kind, t.val, t.len)
+}
+
+func (t *Token) Expect(c string) bool {
+	return t.len == len(c) && t.s[0:t.len] == c
 }
 
 func (t *Token) Consume() error {
@@ -83,7 +87,7 @@ func (t *Token) Consume() error {
 
 func (t *Token) ConsumeNumber() (int, error) {
 	if !t.isNumber() {
-		return 0, t.NewTokenError("current is not number: %+v", t)
+		return 0, t.NewTokenError(NotNumberError, "current is not number: %+v", t)
 	}
 	v := t.val
 	if err := t.Consume(); err != nil {
@@ -93,9 +97,12 @@ func (t *Token) ConsumeNumber() (int, error) {
 	return v, nil
 }
 
-func (t *Token) Expect(c string) error {
-	if !t.isReserved() || t.s[0:t.len] != c {
-		return t.NewTokenError("current is not reversed: %+v", t)
+func (t *Token) ConsumeReserved(c string) error {
+	if !t.isReserved() {
+		return t.NewTokenError(NotReserverdError, "current is not reversed: %+v", t)
+	}
+	if !t.Expect(c) {
+		return t.NewTokenError(NotExpectedError, "current is not expected reversed: %+v", t)
 	}
 	if err := t.Consume(); err != nil {
 		return err
@@ -157,6 +164,13 @@ func Tokenize(s string) (*Token, error) {
 			continue
 		}
 
+		if len(s) >= 2 && s[:2] == "if" && !util.IsAlnum(s[2]) {
+			current = newToken(TK_IF, current, s, 2)
+			s = s[2:]
+			current.pos += 2
+			continue
+		}
+
 		if len(s) >= 6 && s[:6] == "return" && !util.IsAlnum(s[6]) {
 			current = newToken(TK_RETURN, current, s, 6)
 			s = s[6:]
@@ -168,7 +182,11 @@ func Tokenize(s string) (*Token, error) {
 			tmp := s
 			num, err := util.ParseInt(&s)
 			if err != nil {
-				return nil, tokenError(token.input, current.pos+1, err.Error())
+				return nil, tokenError{
+					input:   token.input,
+					message: err.Error(),
+					pos:     current.pos + 1,
+				}
 			}
 			current = newToken(TK_NUM, current, tmp, 1)
 			current.val = num
@@ -188,7 +206,11 @@ func Tokenize(s string) (*Token, error) {
 			break
 		}
 		if len(varName) == 0 {
-			return nil, tokenError(token.input, current.pos+1, "varName is empty")
+			return nil, tokenError{
+				input:   token.input,
+				message: "varName is empty",
+				pos:     current.pos + 1,
+			}
 		}
 
 		current = newToken(TK_IDENT, current, tmp, len(varName))
@@ -215,13 +237,6 @@ func newToken(kind TokenKind, current *Token, s string, len int) *Token {
 	return &next
 }
 
-func (t *Token) NewTokenError(format string, a ...interface{}) error {
-	return tokenError(t.input, t.pos, format, a...)
-}
-
-func tokenError(input string, pos int, format string, a ...interface{}) error {
-	s := `%s
-%s
-%s`
-	return fmt.Errorf(s, input, strings.Repeat(" ", pos-1)+"^", fmt.Sprintf(format, a...))
+func (t *Token) NewTokenError(e tokenError, format string, a ...interface{}) error {
+	return e.New(t.input, fmt.Sprintf(format, a...), t.pos)
 }

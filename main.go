@@ -24,7 +24,7 @@ func main() {
 	parser := node.NewNodeParser(token)
 	node, err := parser.Program()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(fmt.Sprintf("%+v", err))
 		os.Exit(1)
 	}
 

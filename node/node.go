@@ -1,6 +1,8 @@
 package node
 
 import (
+	"github.com/pkg/errors"
+
 	"github.com/ryota-sakamoto/c8go/token"
 )
 
@@ -111,7 +113,7 @@ func (np *NodeParser) Program() ([]*Node, error) {
 }
 
 func (np *NodeParser) Stmt() (*Node, error) {
-	re := np.token.Expect("return")
+	re := np.token.ConsumeReserved("return")
 
 	node, err := np.Expr()
 	if err != nil {
@@ -122,7 +124,7 @@ func (np *NodeParser) Stmt() (*Node, error) {
 		node = NewNode(ND_RETURN, nil, node)
 	}
 
-	return node, np.token.Expect(";")
+	return node, np.token.ConsumeReserved(";")
 }
 
 func (np *NodeParser) Expr() (*Node, error) {
@@ -135,7 +137,7 @@ func (np *NodeParser) Assign() (*Node, error) {
 		return nil, err
 	}
 
-	err = np.token.Expect("=")
+	err = np.token.ConsumeReserved("=")
 	if err == nil {
 		right, err := np.Assign()
 		if err != nil {
@@ -154,7 +156,7 @@ func (np *NodeParser) Equality() (*Node, error) {
 	}
 
 	for {
-		err := np.token.Expect("==")
+		err := np.token.ConsumeReserved("==")
 		if err == nil {
 			right, err := np.Relational()
 			if err != nil {
@@ -164,7 +166,7 @@ func (np *NodeParser) Equality() (*Node, error) {
 			continue
 		}
 
-		err = np.token.Expect("!=")
+		err = np.token.ConsumeReserved("!=")
 		if err == nil {
 			right, err := np.Relational()
 			if err != nil {
@@ -185,7 +187,7 @@ func (np *NodeParser) Relational() (*Node, error) {
 	}
 
 	for {
-		err := np.token.Expect("<")
+		err := np.token.ConsumeReserved("<")
 		if err == nil {
 			right, err := np.Add()
 			if err != nil {
@@ -195,7 +197,7 @@ func (np *NodeParser) Relational() (*Node, error) {
 			continue
 		}
 
-		err = np.token.Expect("<=")
+		err = np.token.ConsumeReserved("<=")
 		if err == nil {
 			right, err := np.Add()
 			if err != nil {
@@ -205,7 +207,7 @@ func (np *NodeParser) Relational() (*Node, error) {
 			continue
 		}
 
-		err = np.token.Expect(">")
+		err = np.token.ConsumeReserved(">")
 		if err == nil {
 			right, err := np.Add()
 			if err != nil {
@@ -215,7 +217,7 @@ func (np *NodeParser) Relational() (*Node, error) {
 			continue
 		}
 
-		err = np.token.Expect(">=")
+		err = np.token.ConsumeReserved(">=")
 		if err == nil {
 			right, err := np.Add()
 			if err != nil {
@@ -236,7 +238,7 @@ func (np *NodeParser) Add() (*Node, error) {
 	}
 
 	for {
-		err := np.token.Expect("+")
+		err := np.token.ConsumeReserved("+")
 		if err == nil {
 			right, err := np.Mul()
 			if err != nil {
@@ -246,7 +248,7 @@ func (np *NodeParser) Add() (*Node, error) {
 			continue
 		}
 
-		err = np.token.Expect("-")
+		err = np.token.ConsumeReserved("-")
 		if err == nil {
 			right, err := np.Mul()
 			if err != nil {
@@ -267,7 +269,7 @@ func (np *NodeParser) Mul() (*Node, error) {
 	}
 
 	for {
-		err := np.token.Expect("*")
+		err := np.token.ConsumeReserved("*")
 		if err == nil {
 			right, err := np.Unary()
 			if err != nil {
@@ -277,7 +279,7 @@ func (np *NodeParser) Mul() (*Node, error) {
 			continue
 		}
 
-		err = np.token.Expect("/")
+		err = np.token.ConsumeReserved("/")
 		if err == nil {
 			right, err := np.Unary()
 			if err != nil {
@@ -291,12 +293,12 @@ func (np *NodeParser) Mul() (*Node, error) {
 }
 
 func (np *NodeParser) Unary() (*Node, error) {
-	err := np.token.Expect("+")
+	err := np.token.ConsumeReserved("+")
 	if err == nil {
 		return np.Primary()
 	}
 
-	err = np.token.Expect("-")
+	err = np.token.ConsumeReserved("-")
 	if err == nil {
 		right, err := np.Primary()
 		if err != nil {
@@ -309,16 +311,16 @@ func (np *NodeParser) Unary() (*Node, error) {
 }
 
 func (np *NodeParser) Primary() (*Node, error) {
-	err := np.token.Expect("(")
+	err := np.token.ConsumeReserved("(")
 	if err == nil {
 		node, err := np.Expr()
 		if err != nil {
 			return nil, err
 		}
 
-		err = np.token.Expect(")")
+		err = np.token.ConsumeReserved(")")
 		if err != nil {
-			return nil, err
+			return nil, errors.WithStack(err)
 		}
 
 		return node, nil
@@ -326,12 +328,12 @@ func (np *NodeParser) Primary() (*Node, error) {
 
 	n, err := np.token.ConsumeNumber()
 	if err == nil {
-		return NewNodeNum(n), nil
+		return NewNodeNum(n), errors.WithStack(err)
 	}
 
 	name, err := np.token.GetVariableName()
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	if _, ok := locals.get(name); !ok {
 		locals.set(name)
