@@ -16,6 +16,7 @@ const (
 	ND_DIV
 	ND_LVAR
 	ND_NUM
+	ND_FUNC // func()
 
 	ND_ASSIGN
 
@@ -61,6 +62,7 @@ type Node struct {
 	Block  []*Node
 	Val    int
 	Offset int
+	Name   string
 }
 
 func (n Node) IsNum() bool {
@@ -99,6 +101,15 @@ func NewNodeLVar(offset int) *Node {
 	node := Node{
 		Kind:   ND_LVAR,
 		Offset: offset,
+	}
+
+	return &node
+}
+
+func NewNodeFunc(name string) *Node {
+	node := Node{
+		Kind: ND_FUNC,
+		Name: name,
 	}
 
 	return &node
@@ -161,7 +172,11 @@ func (np *NodeParser) Stmt() (*Node, error) {
 			return nil, err
 		}
 
-		return NewNode(ND_RETURN, nil, node), np.token.ConsumeReserved(";")
+		if err := np.token.ConsumeReserved(";"); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		return NewNode(ND_RETURN, nil, node), nil
 	}
 
 	if np.token.Expect("if") {
@@ -235,7 +250,11 @@ func (np *NodeParser) Stmt() (*Node, error) {
 		return nil, err
 	}
 
-	return node, np.token.ConsumeReserved(";")
+	if err := np.token.ConsumeReserved(";"); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return node, nil
 }
 
 func (np *NodeParser) Expr() (*Node, error) {
@@ -498,11 +517,29 @@ func (np *NodeParser) Primary() (*Node, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+	if err := errors.WithStack(np.token.Consume()); err != nil {
+		return nil, errors.WithStack(err)
+	}
 	if _, ok := locals.get(name); !ok {
 		locals.set(name)
 	}
+
+	if np.token.Expect("(") {
+		err = np.token.ConsumeReserved("(")
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		err = np.token.ConsumeReserved(")")
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		return NewNodeFunc(name), nil
+	}
+
 	offset, _ := locals.get(name)
-	return NewNodeLVar(offset), errors.WithStack(np.token.Consume())
+	return NewNodeLVar(offset), nil
 }
 
 var locals = localVariale{

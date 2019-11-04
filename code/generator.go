@@ -108,6 +108,14 @@ func gen(n *node.Node) {
 			gen(n)
 		}
 		return
+	case node.ND_FUNC:
+		fmt.Println("    push rbp")
+		fmt.Println("    mov rbp, rsp")
+		fmt.Println(fmt.Sprintf("    call %s", n.Name))
+		fmt.Println("    pop rbp")
+
+		fmt.Println("    push rax")
+		return
 	}
 
 	gen(n.Left)

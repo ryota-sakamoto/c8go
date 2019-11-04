@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "int one() { return 1; }" > one.c
+
 function run() {
     go run *.go "$@" > a.s
     if [ $? = 1 ]; then
@@ -7,7 +9,7 @@ function run() {
         return
     fi
 
-    docker run -v $(pwd):/home -w /home --rm gcc-image gcc -o a a.s
+    docker run -v $(pwd):/home -w /home --rm gcc-image gcc -o a a.s one.c
     docker run -v $(pwd):/home -w /home --rm gcc-image /home/a
 }
 
@@ -22,11 +24,12 @@ function check() {
         echo "$input => $actual"
     else
         echo "$input => $actual, but want $expected"
+        exit 1
     fi
 }
 
 function clean() {
-    rm a.s a
+    rm a.s a one.c
 }
 
 check 0 "0;"
@@ -79,5 +82,7 @@ a = a * b;\
 b = a * a;\
 }\
 return b;"
+
+check 4 "return 3 + one();"
 
 clean
