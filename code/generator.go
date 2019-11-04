@@ -111,6 +111,30 @@ func gen(n *node.Node) {
 	case node.ND_FUNC:
 		fmt.Println("    push rbp")
 		fmt.Println("    mov rbp, rsp")
+
+		switch len(n.Args) {
+		case 6:
+			fmt.Println(fmt.Sprintf("    mov r9d, %d", n.Args[5]))
+			fallthrough
+		case 5:
+			fmt.Println(fmt.Sprintf("    mov r8d, %d", n.Args[4]))
+			fallthrough
+		case 4:
+			fmt.Println(fmt.Sprintf("    mov ecx, %d", n.Args[3]))
+			fallthrough
+		case 3:
+			fmt.Println(fmt.Sprintf("    mov edx, %d", n.Args[2]))
+			fallthrough
+		case 2:
+			fmt.Println(fmt.Sprintf("    mov esi, %d", n.Args[1]))
+			fallthrough
+		case 1:
+			fmt.Println(fmt.Sprintf("    mov edi, %d", n.Args[0]))
+		case 0:
+		default:
+			panic(fmt.Sprintf("not support args len: %d", len(n.Args)))
+		}
+
 		fmt.Println(fmt.Sprintf("    call %s", n.Name))
 		fmt.Println("    pop rbp")
 

@@ -63,6 +63,7 @@ type Node struct {
 	Val    int
 	Offset int
 	Name   string
+	Args   []int
 }
 
 func (n Node) IsNum() bool {
@@ -106,10 +107,11 @@ func NewNodeLVar(offset int) *Node {
 	return &node
 }
 
-func NewNodeFunc(name string) *Node {
+func NewNodeFunc(name string, args []int) *Node {
 	node := Node{
 		Kind: ND_FUNC,
 		Name: name,
+		Args: args,
 	}
 
 	return &node
@@ -530,12 +532,28 @@ func (np *NodeParser) Primary() (*Node, error) {
 			return nil, errors.WithStack(err)
 		}
 
+		args := []int{}
+		first := true
+		for !np.token.Expect(")") {
+			if first {
+				first = false
+			} else if err := np.token.ConsumeReserved(","); err != nil {
+				return nil, errors.WithStack(err)
+			}
+
+			num, err := np.token.ConsumeNumber()
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+			args = append(args, num)
+		}
+
 		err = np.token.ConsumeReserved(")")
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 
-		return NewNodeFunc(name), nil
+		return NewNodeFunc(name, args), nil
 	}
 
 	offset, _ := locals.get(name)

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 echo "int one() { return 1; }" > one.c
+echo "int two(int a, int b) { return a + b; }" > two.c
 
 function run() {
     go run *.go "$@" > a.s
@@ -9,7 +10,7 @@ function run() {
         return
     fi
 
-    docker run -v $(pwd):/home -w /home --rm gcc-image gcc -o a a.s one.c
+    docker run -v $(pwd):/home -w /home --rm gcc-image gcc -o a a.s one.c two.c
     docker run -v $(pwd):/home -w /home --rm gcc-image /home/a
 }
 
@@ -29,7 +30,7 @@ function check() {
 }
 
 function clean() {
-    rm a.s a one.c
+    rm a.s a one.c two.c
 }
 
 check 0 "0;"
@@ -84,5 +85,6 @@ b = a * a;\
 return b;"
 
 check 4 "return 3 + one();"
+check 100 "return two(1, 9) * two(6, 4);"
 
 clean
