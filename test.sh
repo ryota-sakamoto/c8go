@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 echo "int one() { return 1; }" > one.c
 echo "int two(int a, int b) { return a + b; }" > two.c
@@ -10,8 +10,8 @@ function run() {
         return
     fi
 
-    docker run -v $(pwd):/home -w /home --rm gcc-image gcc -o a a.s one.c two.c
-    docker run -v $(pwd):/home -w /home --rm gcc-image /home/a
+    gcc -o a a.s one.c two.c
+    ./a
 }
 
 function check() {
