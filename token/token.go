@@ -66,11 +66,8 @@ func (t *Token) IsEOF() bool {
 	return t.kind == TK_EOF
 }
 
-func (t *Token) GetVariableName() (string, error) {
-	if t.kind != TK_IDENT {
-		return "", t.NewTokenError(NotVariableError, "current is not variable: %+v", t)
-	}
-	return t.s[:t.len], nil
+func (t *Token) isIndent() bool {
+	return t.kind == TK_IDENT
 }
 
 func (t Token) String() string {
@@ -89,6 +86,14 @@ func (t *Token) Consume() error {
 	*t = *next
 
 	return nil
+}
+
+func (t *Token) ConsumeIndent() (string, error) {
+	if !t.isIndent() {
+		return "", t.NewTokenError(NotNumberError, "current is not indent: %+v", t)
+	}
+
+	return t.s[:t.len], t.Consume()
 }
 
 func (t *Token) ConsumeNumber() (int, error) {

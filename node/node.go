@@ -16,7 +16,8 @@ const (
 	ND_DIV
 	ND_LVAR
 	ND_NUM
-	ND_FUNC // func()
+	ND_FUNC      // func()
+	ND_CALL_FUNC // call func()
 
 	ND_ASSIGN
 
@@ -80,6 +81,16 @@ func NewNode(kind NodeKind, left *Node, right *Node) *Node {
 	return &node
 }
 
+func NewNodeFunc(name string, block []*Node) *Node {
+	node := Node{
+		Kind:  ND_FUNC,
+		Name:  name,
+		Block: block,
+	}
+
+	return &node
+}
+
 func NewNodeBlock(block []*Node) *Node {
 	node := Node{
 		Kind:  ND_BLOCK,
@@ -107,9 +118,9 @@ func NewNodeLVar(offset int) *Node {
 	return &node
 }
 
-func NewNodeFunc(name string, args []int) *Node {
+func NewNodeCallFunc(name string, args []int) *Node {
 	node := Node{
-		Kind: ND_FUNC,
+		Kind: ND_CALL_FUNC,
 		Name: name,
 		Args: args,
 	}
@@ -132,11 +143,35 @@ func NewNodeParser(token *token.Token) *NodeParser {
 func (np *NodeParser) Program() ([]*Node, error) {
 	result := []*Node{}
 	for !np.token.IsEOF() {
-		node, err := np.Stmt()
+		name, err := np.token.ConsumeIndent()
 		if err != nil {
-			return nil, err
+			return nil, errors.WithStack(err)
 		}
-		result = append(result, node)
+		if err := np.token.ConsumeReserved("("); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		if err := np.token.ConsumeReserved(")"); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		if err := np.token.ConsumeReserved("{"); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		block := []*Node{}
+		for !np.token.Expect("}") {
+			node, err := np.Stmt()
+			if err != nil {
+				return nil, err
+			}
+			block = append(block, node)
+		}
+
+		if err := np.token.ConsumeReserved("}"); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		funcNode := NewNodeFunc(name, block)
+		result = append(result, funcNode)
 	}
 	return result, nil
 }
@@ -515,11 +550,8 @@ func (np *NodeParser) Primary() (*Node, error) {
 		return NewNodeNum(n), errors.WithStack(err)
 	}
 
-	name, err := np.token.GetVariableName()
+	name, err := np.token.ConsumeIndent()
 	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	if err := errors.WithStack(np.token.Consume()); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if _, ok := locals.get(name); !ok {
@@ -553,7 +585,7 @@ func (np *NodeParser) Primary() (*Node, error) {
 			return nil, errors.WithStack(err)
 		}
 
-		return NewNodeFunc(name, args), nil
+		return NewNodeCallFunc(name, args), nil
 	}
 
 	offset, _ := locals.get(name)

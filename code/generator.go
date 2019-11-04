@@ -17,11 +17,6 @@ func NewGenerator() *Generator {
 func (g *Generator) Before() {
 	fmt.Println(".intel_syntax noprefix")
 	fmt.Println(".global main")
-	fmt.Println("main:")
-
-	fmt.Println("    push rbp")
-	fmt.Println("    mov rbp, rsp")
-	fmt.Println("    sub rsp, 208")
 }
 
 func (g *Generator) After() {
@@ -37,6 +32,17 @@ func (g *Generator) Run(n *node.Node) {
 
 func gen(n *node.Node) {
 	switch n.Kind {
+	case node.ND_FUNC:
+		fmt.Println(n.Name + ":")
+
+		fmt.Println("    push rbp")
+		fmt.Println("    mov rbp, rsp")
+		fmt.Println("    sub rsp, 208")
+
+		for _, n := range n.Block {
+			gen(n)
+		}
+		return
 	case node.ND_NUM:
 		fmt.Println(fmt.Sprintf("    push %d", n.Val))
 		return
@@ -108,7 +114,7 @@ func gen(n *node.Node) {
 			gen(n)
 		}
 		return
-	case node.ND_FUNC:
+	case node.ND_CALL_FUNC:
 		fmt.Println("    push rbp")
 		fmt.Println("    mov rbp, rsp")
 

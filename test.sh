@@ -33,58 +33,73 @@ function clean() {
     rm a.s a one.c two.c
 }
 
-check 0 "0;"
-check 42 "42;"
-check 21 "5+20-4;"
-check 41 " 12 + 34 - 5 ;"
-check 47 "5+6*7;"
-check 15 "5*(9-6);"
-check 4 "(3+5)/2;"
-check 10 "-10+20;"
+check 0 "main() { 0; }"
+check 42 "main() { 42; }"
+check 21 "main() { 5+20-4; }"
+check 41 "main() {  12 + 34 - 5 ; }"
+check 47 "main() { 5+6*7; }"
+check 15 "main() { 5*(9-6); }"
+check 4 "main() { (3+5)/2; }"
+check 10 "main() { -10+20; }"
 
-check 1 " 1  == 1;"
-check 0 " 1  != 1;"
-check 0 " 3  < 1;"
-check 0 " 5  > 9;"
-check 1 " 5  >= 4;"
-check 1 " 4  <= 4;"
+check 1 "main() {  1  == 1; }"
+check 0 "main() {  1  != 1; }"
+check 0 "main() {  3  < 1; }"
+check 0 "main() {  5  > 9; }"
+check 1 "main() {  5  >= 4; }"
+check 1 "main() {  4  <= 4; }"
 
-check 3 "a=3;a;"
-check 17 "a = 3;\
+check 3 "main() { \
+a=3;a;\
+}"
+check 17 "main() { \
+a = 3;\
 b = a + 14;\
-b;"
+b;\
+}"
 
-check 20 "foo = 1;\
+check 20 "main() { foo = 1;\
 bar = 2 + 17;\
-foo + bar;"
-check 56 "a=1;\
+foo + bar;\
+}"
+check 56 "main() { a=1;\
 b = a + 27;\
-return b * 2;"
+return b * 2;\
+}"
 
-check 0 "if (0) return 1;\
-return 0;"
-check 6 "a = 5; \
+check 0 "main() { if (0) return 1;\
+return 0;\
+}"
+check 6 "main() { a = 5; \
 if (a == 5) a = a + 1;\
-return a;"
+return a;\
+}"
 
-check 4 "c = 2;\
+check 4 "main() { c = 2;\
 if (c == 2) c = 4;\
 else return 10;\
-return c;"
+return c;\
+}"
 
-check 10 "counter = 0;\
+check 10 "main() { \
+counter = 0;\
 while (counter < 10) counter = counter + 1;\
-return counter;"
+return counter;\
+}"
 
-check 225 "a = 3;\
-b = 5;\
-if (1) {\
-a = a * b;\
-b = a * a;\
-}\
-return b;"
+check 225 "main() { \
+    a = 3;\
+    b = 5;\
+    if (1) {\
+        a = a * b;\
+        b = a * a;\
+    }\
+    return b;\
+}"
 
-check 4 "return 3 + one();"
-check 100 "return two(1, 9) * two(6, 4);"
+check 4 "main() { return 3 + one(); }"
+check 100 "main() { return two(1, 9) * two(6, 4); }"
+
+check 9 "three() { return 3; } main() { a = three(); return a * three(); }"
 
 clean
