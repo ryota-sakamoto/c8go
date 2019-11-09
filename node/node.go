@@ -57,14 +57,15 @@ func (nk NodeKind) String() string {
 }
 
 type Node struct {
-	Kind   NodeKind
-	Left   *Node
-	Right  *Node
-	Block  []*Node
-	Val    int
-	Offset int
-	Name   string
-	Args   []int
+	Kind             NodeKind
+	Left             *Node
+	Right            *Node
+	Block            []*Node
+	Val              int
+	Offset           int
+	Name             string
+	Args             []int
+	DefineArgsOffset []int
 }
 
 func (n Node) IsNum() bool {
@@ -81,11 +82,12 @@ func NewNode(kind NodeKind, left *Node, right *Node) *Node {
 	return &node
 }
 
-func NewNodeFunc(name string, block []*Node) *Node {
+func NewNodeFunc(name string, block []*Node, args []int) *Node {
 	node := Node{
-		Kind:  ND_FUNC,
-		Name:  name,
-		Block: block,
+		Kind:             ND_FUNC,
+		Name:             name,
+		Block:            block,
+		DefineArgsOffset: args,
 	}
 
 	return &node
@@ -150,6 +152,31 @@ func (np *NodeParser) Program() ([]*Node, error) {
 		if err := np.token.ConsumeReserved("("); err != nil {
 			return nil, errors.WithStack(err)
 		}
+
+		args := []int{}
+		first := true
+		for !np.token.Expect(")") {
+			if first {
+				first = false
+			} else {
+				if err := np.token.ConsumeReserved(","); err != nil {
+					return nil, errors.WithStack(err)
+				}
+			}
+
+			name, err := np.token.ConsumeIndent()
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+
+			if _, ok := locals.get(name); !ok {
+				locals.set(name)
+			}
+			offset, _ := locals.get(name)
+
+			args = append(args, offset)
+		}
+
 		if err := np.token.ConsumeReserved(")"); err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -170,7 +197,7 @@ func (np *NodeParser) Program() ([]*Node, error) {
 			return nil, errors.WithStack(err)
 		}
 
-		funcNode := NewNodeFunc(name, block)
+		funcNode := NewNodeFunc(name, block, args)
 		result = append(result, funcNode)
 	}
 	return result, nil

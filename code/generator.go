@@ -39,6 +39,30 @@ func gen(n *node.Node) {
 		fmt.Println("    mov rbp, rsp")
 		fmt.Println("    sub rsp, 208")
 
+		for i, offset := range n.DefineArgsOffset {
+			fmt.Println("    mov rax, rbp")
+			fmt.Println(fmt.Sprintf("    sub rax, %d", offset))
+
+			switch i {
+			case 0:
+				fmt.Println("    mov [rax], edi")
+			case 1:
+				fmt.Println("    mov [rax], esi")
+			case 2:
+				fmt.Println("    mov [rax], edx")
+			case 3:
+				fmt.Println("    mov [rax], ecx")
+			case 4:
+				fmt.Println("    mov [rax], r8d")
+			case 5:
+				fmt.Println("    mov [rax], r9d")
+			default:
+				panic(fmt.Sprintf("not support args len: %d", len(n.DefineArgsOffset)))
+			}
+
+			fmt.Println("    push rax")
+		}
+
 		for _, n := range n.Block {
 			gen(n)
 		}

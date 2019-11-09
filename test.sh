@@ -102,4 +102,6 @@ check 100 "main() { return two(1, 9) * two(6, 4); }"
 
 check 9 "three() { return 3; } main() { a = three(); return a * three(); }"
 
+check 99 "sum(x, y, z) { return (x + y) * z; } main() { return sum(10, 23, 3); }"
+
 clean
