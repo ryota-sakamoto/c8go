@@ -45,22 +45,20 @@ func gen(n *node.Node) {
 
 			switch i {
 			case 0:
-				fmt.Println("    mov [rax], edi")
+				fmt.Println("    mov [rax], rdi")
 			case 1:
-				fmt.Println("    mov [rax], esi")
+				fmt.Println("    mov [rax], rsi")
 			case 2:
-				fmt.Println("    mov [rax], edx")
+				fmt.Println("    mov [rax], rdx")
 			case 3:
-				fmt.Println("    mov [rax], ecx")
+				fmt.Println("    mov [rax], rcx")
 			case 4:
-				fmt.Println("    mov [rax], r8d")
+				fmt.Println("    mov [rax], r8")
 			case 5:
-				fmt.Println("    mov [rax], r9d")
+				fmt.Println("    mov [rax], r9")
 			default:
 				panic(fmt.Sprintf("not support args len: %d", len(n.DefineArgsOffset)))
 			}
-
-			fmt.Println("    push rax")
 		}
 
 		for _, n := range n.Block {
@@ -94,44 +92,52 @@ func gen(n *node.Node) {
 		fmt.Println("    ret")
 		return
 	case node.ND_IF:
+		end := getLabelCount()
+
 		gen(n.Left)
 
 		fmt.Println("    pop rax")
 		fmt.Println("    cmp rax, 0")
-		fmt.Println("    je .LendXXX")
+		fmt.Println(fmt.Sprintf("    je .Lend%d", end))
 
 		gen(n.Right)
 
-		fmt.Println(".LendXXX:")
+		fmt.Println(fmt.Sprintf(".Lend%d:", end))
 		return
 	case node.ND_IF_ELSE:
 		gen(n.Left)
 		gen(n.Right)
 		return
 	case node.ND_ELSE:
+		ec := getLabelCount()
+		end := getLabelCount()
+
 		fmt.Println("    pop rax")
 		fmt.Println("    cmp rax, 0")
-		fmt.Println("    je .LelseXXX")
+		fmt.Println(fmt.Sprintf("    je .Lelse%d", ec))
 
 		gen(n.Left)
-		fmt.Println("    jmp .LendXXX")
-		fmt.Println(".LelseXXX:")
+		fmt.Println(fmt.Sprintf("    jmp .Lend%d", end))
+		fmt.Println(fmt.Sprintf(".Lelse%d:", ec))
 		gen(n.Right)
-		fmt.Println(".LendXXX:")
+		fmt.Println(fmt.Sprintf(".Lend%d:", end))
 
 		return
 	case node.ND_WHILE:
-		fmt.Println(".LbeginXXX:")
+		begin := getLabelCount()
+		end := getLabelCount()
+
+		fmt.Println(fmt.Sprintf(".Lbegin%d:", begin))
 		gen(n.Left)
 
 		fmt.Println("    pop rax")
 		fmt.Println("    cmp rax, 0")
-		fmt.Println("    je .LendXXX")
+		fmt.Println(fmt.Sprintf("    je .Lend%d", end))
 
 		gen(n.Right)
 
-		fmt.Println("    jmp .LbeginXXX")
-		fmt.Println(".LendXXX:")
+		fmt.Println(fmt.Sprintf("    jmp .Lbegin%d", begin))
+		fmt.Println(fmt.Sprintf(".Lend%d:", end))
 		return
 	case node.ND_BLOCK:
 		for _, n := range n.Block {
@@ -139,32 +145,33 @@ func gen(n *node.Node) {
 		}
 		return
 	case node.ND_CALL_FUNC:
-		fmt.Println("    push rbp")
-		fmt.Println("    mov rbp, rsp")
-
-		switch len(n.Args) {
-		case 6:
-			fmt.Println(fmt.Sprintf("    mov r9d, %d", n.Args[5]))
-			fallthrough
-		case 5:
-			fmt.Println(fmt.Sprintf("    mov r8d, %d", n.Args[4]))
-			fallthrough
-		case 4:
-			fmt.Println(fmt.Sprintf("    mov ecx, %d", n.Args[3]))
-			fallthrough
-		case 3:
-			fmt.Println(fmt.Sprintf("    mov edx, %d", n.Args[2]))
-			fallthrough
-		case 2:
-			fmt.Println(fmt.Sprintf("    mov esi, %d", n.Args[1]))
-			fallthrough
-		case 1:
-			fmt.Println(fmt.Sprintf("    mov edi, %d", n.Args[0]))
-		case 0:
-		default:
+		if len(n.Args) > 6 {
 			panic(fmt.Sprintf("not support args len: %d", len(n.Args)))
 		}
 
+		for i, argsNode := range n.Args {
+			gen(argsNode)
+
+			fmt.Println("    pop rax")
+
+			switch i {
+			case 0:
+				fmt.Println("    mov rdi, rax")
+			case 1:
+				fmt.Println("    mov rsi, rax")
+			case 2:
+				fmt.Println("    mov rdx, rax")
+			case 3:
+				fmt.Println("    mov rcx, rax")
+			case 4:
+				fmt.Println("    mov r8, rax")
+			case 5:
+				fmt.Println("    mov r9, rax")
+			}
+		}
+
+		fmt.Println("    push rbp")
+		fmt.Println("    mov rbp, rsp")
 		fmt.Println(fmt.Sprintf("    call %s", n.Name))
 		fmt.Println("    pop rbp")
 
@@ -216,4 +223,11 @@ func genLabel(n *node.Node) {
 	fmt.Println("    mov rax, rbp")
 	fmt.Println(fmt.Sprintf("    sub rax, %d", n.Offset))
 	fmt.Println("    push rax")
+}
+
+var counter = 0
+
+func getLabelCount() int {
+	counter++
+	return counter
 }

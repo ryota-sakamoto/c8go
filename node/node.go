@@ -64,7 +64,7 @@ type Node struct {
 	Val              int
 	Offset           int
 	Name             string
-	Args             []int
+	Args             []*Node
 	DefineArgsOffset []int
 }
 
@@ -120,7 +120,7 @@ func NewNodeLVar(offset int) *Node {
 	return &node
 }
 
-func NewNodeCallFunc(name string, args []int) *Node {
+func NewNodeCallFunc(name string, args []*Node) *Node {
 	node := Node{
 		Kind: ND_CALL_FUNC,
 		Name: name,
@@ -591,20 +591,23 @@ func (np *NodeParser) Primary() (*Node, error) {
 			return nil, errors.WithStack(err)
 		}
 
-		args := []int{}
+		args := []*Node{}
 		first := true
 		for !np.token.Expect(")") {
 			if first {
 				first = false
-			} else if err := np.token.ConsumeReserved(","); err != nil {
-				return nil, errors.WithStack(err)
+			} else {
+				if err := np.token.ConsumeReserved(","); err != nil {
+					return nil, errors.WithStack(err)
+				}
 			}
 
-			num, err := np.token.ConsumeNumber()
+			argsNode, err := np.Expr()
 			if err != nil {
 				return nil, errors.WithStack(err)
 			}
-			args = append(args, num)
+
+			args = append(args, argsNode)
 		}
 
 		err = np.token.ConsumeReserved(")")

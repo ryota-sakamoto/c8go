@@ -2,6 +2,10 @@
 
 echo "int one() { return 1; }" > one.c
 echo "int two(int a, int b) { return a + b; }" > two.c
+cat <<EOF > p.c
+#include <stdio.h>
+void p(int v) { printf("%d\n", v); }
+EOF
 
 function run() {
     go run *.go "$@" > a.s
@@ -10,7 +14,7 @@ function run() {
         return
     fi
 
-    gcc -o a a.s one.c two.c
+    gcc -g -O0 -o a a.s one.c two.c p.c
     ./a
 }
 
@@ -30,7 +34,7 @@ function check() {
 }
 
 function clean() {
-    rm a.s a one.c two.c
+    rm a.s a one.c two.c p.c
 }
 
 check 0 "main() { 0; }"
@@ -103,5 +107,24 @@ check 100 "main() { return two(1, 9) * two(6, 4); }"
 check 9 "three() { return 3; } main() { a = three(); return a * three(); }"
 
 check 99 "sum(x, y, z) { return (x + y) * z; } main() { return sum(10, 23, 3); }"
+
+check 10 "f(x) { return x - 10; } main() { x = 23; return f(x - 3); }"
+
+check 120 "f(x) {\
+    if (x == 1) return 1;\
+    return f(x - 1) * x;\
+}\
+main() {\
+    f(5);\
+}"
+
+check 89 "fib(x) {\
+    if (x == 0) return 1;\
+    if (x == 1) return 1;\
+    return fib(x - 1) + fib(x - 2);\
+}\
+main() {\
+    fib(10);\
+}"
 
 clean
