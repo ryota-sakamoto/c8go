@@ -33,61 +33,61 @@ function check() {
     fi
 }
 
-check 0 "main() { 0; }"
-check 42 "main() { 42; }"
-check 21 "main() { 5+20-4; }"
-check 41 "main() {  12 + 34 - 5 ; }"
-check 47 "main() { 5+6*7; }"
-check 15 "main() { 5*(9-6); }"
-check 4 "main() { (3+5)/2; }"
-check 10 "main() { -10+20; }"
+check 0 "int main() { 0; }"
+check 42 "int main() { 42; }"
+check 21 "int main() { 5+20-4; }"
+check 41 "int main() {  12 + 34 - 5 ; }"
+check 47 "int main() { 5+6*7; }"
+check 15 "int main() { 5*(9-6); }"
+check 4 "int main() { (3+5)/2; }"
+check 10 "int main() { -10+20; }"
 
-check 1 "main() {  1  == 1; }"
-check 0 "main() {  1  != 1; }"
-check 0 "main() {  3  < 1; }"
-check 0 "main() {  5  > 9; }"
-check 1 "main() {  5  >= 4; }"
-check 1 "main() {  4  <= 4; }"
+check 1 "int main() {  1  == 1; }"
+check 0 "int main() {  1  != 1; }"
+check 0 "int main() {  3  < 1; }"
+check 0 "int main() {  5  > 9; }"
+check 1 "int main() {  5  >= 4; }"
+check 1 "int main() {  4  <= 4; }"
 
-check 3 "main() { \
+check 3 "int main() { \
 a=3;a;\
 }"
-check 17 "main() { \
+check 17 "int main() { \
 a = 3;\
 b = a + 14;\
 b;\
 }"
 
-check 20 "main() { foo = 1;\
+check 20 "int main() { foo = 1;\
 bar = 2 + 17;\
 foo + bar;\
 }"
-check 56 "main() { a=1;\
+check 56 "int main() { a=1;\
 b = a + 27;\
 return b * 2;\
 }"
 
-check 0 "main() { if (0) return 1;\
+check 0 "int main() { if (0) return 1;\
 return 0;\
 }"
-check 6 "main() { a = 5; \
+check 6 "int main() { a = 5; \
 if (a == 5) a = a + 1;\
 return a;\
 }"
 
-check 4 "main() { c = 2;\
+check 4 "int main() { c = 2;\
 if (c == 2) c = 4;\
 else return 10;\
 return c;\
 }"
 
-check 10 "main() { \
+check 10 "int main() { \
 counter = 0;\
 while (counter < 10) counter = counter + 1;\
 return counter;\
 }"
 
-check 225 "main() { \
+check 225 "int main() { \
     a = 3;\
     b = 5;\
     if (1) {\
@@ -97,33 +97,33 @@ check 225 "main() { \
     return b;\
 }"
 
-check 4 "main() { return 3 + one(); }"
-check 100 "main() { return two(1, 9) * two(6, 4); }"
+check 4 "int main() { return 3 + one(); }"
+check 100 "int main() { return two(1, 9) * two(6, 4); }"
 
-check 9 "three() { return 3; } main() { a = three(); return a * three(); }"
+check 9 "int three() { return 3; } int main() { a = three(); return a * three(); }"
 
-check 99 "sum(x, y, z) { return (x + y) * z; } main() { return sum(10, 23, 3); }"
+check 99 "int sum(x, y, z) { return (x + y) * z; } int main() { return sum(10, 23, 3); }"
 
-check 10 "f(x) { return x - 10; } main() { x = 23; return f(x - 3); }"
+check 10 "int f(x) { return x - 10; } int main() { x = 23; return f(x - 3); }"
 
-check 120 "f(x) {\
+check 120 "int f(x) {\
     if (x == 1) return 1;\
     return f(x - 1) * x;\
 }\
-main() {\
+int main() {\
     f(5);\
 }"
 
-check 89 "fib(x) {\
+check 89 "int fib(x) {\
     if (x == 0) return 1;\
     if (x == 1) return 1;\
     return fib(x - 1) + fib(x - 2);\
 }\
-main() {\
+int main() {\
     fib(10);\
 }"
 
-check 3 "main() {\
+check 3 "int main() {\
     x = 3;\
     y = 5;\
     z = &y + 8;\

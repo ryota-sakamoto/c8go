@@ -147,6 +147,10 @@ func NewNodeParser(token *token.Token) *NodeParser {
 func (np *NodeParser) Program() ([]*Node, error) {
 	result := []*Node{}
 	for !np.token.IsEOF() {
+		if err := np.token.ConsumeReserved("int"); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
 		name, err := np.token.ConsumeIndent()
 		if err != nil {
 			return nil, errors.WithStack(err)

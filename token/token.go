@@ -50,6 +50,14 @@ type Token struct {
 	pos   int
 }
 
+func (t *Token) GetInput() string {
+	return t.input
+}
+
+func (t *Token) GetPos() int {
+	return t.pos
+}
+
 func (t *Token) isNumber() bool {
 	return t.kind == TK_NUM
 }
@@ -90,7 +98,7 @@ func (t *Token) Consume() error {
 
 func (t *Token) ConsumeIndent() (string, error) {
 	if !t.isIndent() {
-		return "", t.NewTokenError(NotNumberError, "current is not indent: %+v", t)
+		return "", t.NewTokenError(util.NotNumberError, "current is not indent: %+v", t)
 	}
 
 	return t.s[:t.len], t.Consume()
@@ -98,7 +106,7 @@ func (t *Token) ConsumeIndent() (string, error) {
 
 func (t *Token) ConsumeNumber() (int, error) {
 	if !t.isNumber() {
-		return 0, t.NewTokenError(NotNumberError, "current is not number: %+v", t)
+		return 0, t.NewTokenError(util.NotNumberError, "current is not number: %+v", t)
 	}
 	v := t.val
 	if err := t.Consume(); err != nil {
@@ -110,10 +118,10 @@ func (t *Token) ConsumeNumber() (int, error) {
 
 func (t *Token) ConsumeReserved(c string) error {
 	if !t.isReserved() {
-		return t.NewTokenError(NotReserverdError, "current is not reversed: %+v, want: %+v", t, c)
+		return t.NewTokenError(util.NotReserverdError, "current is not reversed: %+v, want: %+v", t, c)
 	}
 	if !t.Expect(c) {
-		return t.NewTokenError(NotExpectedError, "current is not expected reversed: %+v, want: %+v", t, c)
+		return t.NewTokenError(util.NotExpectedError, "current is not expected reversed: %+v, want: %+v", t, c)
 	}
 	if err := t.Consume(); err != nil {
 		return err
@@ -203,14 +211,30 @@ func Tokenize(s string) (*Token, error) {
 			continue
 		}
 
+		isType := false
+		typeLen := 0
+		for _, v := range []string{"int"} {
+			if len(s) >= len(v) && s[:len(v)] == v {
+				isType = true
+				typeLen = len(v)
+				break
+			}
+		}
+		if isType {
+			current = newToken(TK_RESERVED, current, s, typeLen)
+			s = s[typeLen:]
+			current.pos += typeLen
+			continue
+		}
+
 		if _, err := strconv.Atoi(s[:1]); err == nil {
 			tmp := s
 			num, err := util.ParseInt(&s)
 			if err != nil {
-				return nil, tokenError{
-					input:   token.input,
-					message: err.Error(),
-					pos:     current.pos + 1,
+				return nil, util.CompileError{
+					Input:   token.input,
+					Message: err.Error(),
+					Pos:     current.pos + 1,
 				}
 			}
 			current = newToken(TK_NUM, current, tmp, 1)
@@ -231,10 +255,10 @@ func Tokenize(s string) (*Token, error) {
 			break
 		}
 		if len(varName) == 0 {
-			return nil, tokenError{
-				input:   token.input,
-				message: "varName is empty",
-				pos:     current.pos + 1,
+			return nil, util.CompileError{
+				Input:   token.input,
+				Message: "varName is empty",
+				Pos:     current.pos + 1,
 			}
 		}
 
@@ -262,6 +286,6 @@ func newToken(kind TokenKind, current *Token, s string, len int) *Token {
 	return &next
 }
 
-func (t *Token) NewTokenError(e tokenError, format string, a ...interface{}) error {
+func (t *Token) NewTokenError(e util.CompileError, format string, a ...interface{}) error {
 	return e.New(t.input, fmt.Sprintf(format, a...), t.pos)
 }
