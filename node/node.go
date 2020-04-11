@@ -12,6 +12,8 @@ const (
 	ND_UNKNOWN NodeKind = iota + 1
 	ND_ADD
 	ND_SUB
+	ND_DEREF
+	ND_ADDR
 	ND_MUL
 	ND_DIV
 	ND_LVAR
@@ -547,6 +549,34 @@ func (np *NodeParser) Unary() (*Node, error) {
 			return nil, err
 		}
 		return NewNode(ND_SUB, NewNodeNum(0), right), nil
+	}
+
+	if np.token.Expect("*") {
+		err = np.token.ConsumeReserved("*")
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		left, err := np.Unary()
+		if err != nil {
+			return nil, err
+		}
+
+		return NewNode(ND_DEREF, left, nil), nil
+	}
+
+	if np.token.Expect("&") {
+		err = np.token.ConsumeReserved("&")
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		left, err := np.Unary()
+		if err != nil {
+			return nil, err
+		}
+
+		return NewNode(ND_ADDR, left, nil), nil
 	}
 
 	return np.Primary()

@@ -177,6 +177,14 @@ func gen(n *node.Node) {
 
 		fmt.Println("    push rax")
 		return
+	case node.ND_ADDR:
+		genLabel(n.Left)
+		return
+	case node.ND_DEREF:
+		fmt.Println("    pop rax")
+		fmt.Println("    mov rax, [rax]")
+		fmt.Println("    push rax")
+		return
 	}
 
 	gen(n.Left)

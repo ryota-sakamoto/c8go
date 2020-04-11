@@ -122,3 +122,10 @@ check 89 "fib(x) {\
 main() {\
     fib(10);\
 }"
+
+check 3 "main() {\
+    x = 3;\
+    y = 5;\
+    z = &y + 8;\
+    return *z;\
+}"
