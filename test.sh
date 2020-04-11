@@ -117,11 +117,11 @@ check 100 "int main() { return two(1, 9) * two(6, 4); }"
 
 check 9 "int three() { return 3; } int main() { int a; a = three(); return a * three(); }"
 
-check 99 "int sum(x, y, z) { return (x + y) * z; } int main() { return sum(10, 23, 3); }"
+check 99 "int sum(int x, int y, int z) { return (x + y) * z; } int main() { return sum(10, 23, 3); }"
 
-check 10 "int f(x) { return x - 10; } int main() { x = 23; return f(x - 3); }"
+check 10 "int f(int x) { return x - 10; } int main() { x = 23; return f(x - 3); }"
 
-check 120 "int f(x) {\
+check 120 "int f(int x) {\
     if (x == 1) return 1;\
     return f(x - 1) * x;\
 }\
@@ -129,7 +129,7 @@ int main() {\
     f(5);\
 }"
 
-check 89 "int fib(x) {\
+check 89 "int fib(int x) {\
     if (x == 0) return 1;\
     if (x == 1) return 1;\
     return fib(x - 1) + fib(x - 2);\

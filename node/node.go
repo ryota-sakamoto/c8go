@@ -175,6 +175,10 @@ func (np *NodeParser) Program() ([]*Node, error) {
 				}
 			}
 
+			if err := np.token.ConsumeReserved("int"); err != nil {
+				return nil, errors.WithStack(err)
+			}
+
 			name, err := np.token.ConsumeIndent()
 			if err != nil {
 				return nil, errors.WithStack(err)
