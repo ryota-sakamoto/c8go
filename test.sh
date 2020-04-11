@@ -8,7 +8,7 @@ void p(int v) { printf("%d\n", v); }
 EOF
 
 function run() {
-    go run *.go "$@" > a.s
+    ./c8go "$@" > a.s
     if [ $? = 1 ]; then
         cat a.s
         return
@@ -31,10 +31,6 @@ function check() {
         echo "$input => $actual, but want $expected"
         exit 1
     fi
-}
-
-function clean() {
-    rm a.s a one.c two.c p.c
 }
 
 check 0 "main() { 0; }"
@@ -126,5 +122,3 @@ check 89 "fib(x) {\
 main() {\
     fib(10);\
 }"
-
-clean

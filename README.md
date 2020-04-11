@@ -7,5 +7,5 @@ https://www.sigbus.info/compilerbook
 
 ```
 $ docker build . -t gcc-image
-$ docker run -v $(pwd):/home -w /home --rm gcc-image ./test.sh
+$ docker run -v $(pwd):/home -w /home --rm gcc-image make test
 ```
