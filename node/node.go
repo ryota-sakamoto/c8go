@@ -184,9 +184,14 @@ func (np *NodeParser) Program() ([]*Node, error) {
 				return nil, errors.WithStack(err)
 			}
 
-			if _, ok := locals.get(name); !ok {
-				locals.set(name)
+			if _, ok := locals.get(name); ok {
+				return nil, util.CompileError{
+					Input:   np.token.GetInput(),
+					Message: fmt.Sprintf("%s is already defined.", name),
+					Pos:     np.token.GetPos(),
+				}
 			}
+			locals.set(name)
 			offset, _ := locals.get(name)
 
 			args = append(args, offset)
@@ -332,6 +337,14 @@ func (np *NodeParser) Stmt() (*Node, error) {
 		name, err := np.token.ConsumeIndent()
 		if err != nil {
 			return nil, errors.WithStack(err)
+		}
+
+		if _, ok := locals.get(name); ok {
+			return nil, util.CompileError{
+				Input:   np.token.GetInput(),
+				Message: fmt.Sprintf("%s is already defined.", name),
+				Pos:     np.token.GetPos(),
+			}
 		}
 		locals.set(name)
 
