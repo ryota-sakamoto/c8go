@@ -1,7 +1,4 @@
 a
 a.s
-
-one.c
-two.c
-
+*.c
 c8go

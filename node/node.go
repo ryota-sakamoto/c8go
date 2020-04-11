@@ -1,9 +1,12 @@
 package node
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 
 	"github.com/ryota-sakamoto/c8go/token"
+	"github.com/ryota-sakamoto/c8go/util"
 )
 
 type NodeKind int
@@ -20,6 +23,8 @@ const (
 	ND_NUM
 	ND_FUNC      // func()
 	ND_CALL_FUNC // call func()
+
+	ND_DEFINE_VAR
 
 	ND_ASSIGN
 
@@ -313,6 +318,29 @@ func (np *NodeParser) Stmt() (*Node, error) {
 		}
 
 		return NewNode(ND_WHILE, node, s), nil
+	}
+
+	if np.token.Expect("int") {
+		if err := np.token.ConsumeReserved("int"); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		name, err := np.token.ConsumeIndent()
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		locals.set(name)
+
+		if err := np.token.ConsumeReserved(";"); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		node, err := np.Stmt()
+		if err != nil {
+			return nil, err
+		}
+
+		return NewNode(ND_DEFINE_VAR, node, nil), nil
 	}
 
 	node, err := np.Expr()
@@ -615,9 +643,6 @@ func (np *NodeParser) Primary() (*Node, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if _, ok := locals.get(name); !ok {
-		locals.set(name)
-	}
 
 	if np.token.Expect("(") {
 		err = np.token.ConsumeReserved("(")
@@ -652,8 +677,15 @@ func (np *NodeParser) Primary() (*Node, error) {
 		return NewNodeCallFunc(name, args), nil
 	}
 
-	offset, _ := locals.get(name)
-	return NewNodeLVar(offset), nil
+	if offset, ok := locals.get(name); !ok {
+		return nil, util.CompileError{
+			Input:   np.token.GetInput(),
+			Message: fmt.Sprintf("%s is not defined.", name),
+			Pos:     np.token.GetPos(),
+		}
+	} else {
+		return NewNodeLVar(offset), nil
+	}
 }
 
 var locals = localVariale{

@@ -185,6 +185,9 @@ func gen(n *node.Node) {
 		fmt.Println("    mov rax, [rax]")
 		fmt.Println("    push rax")
 		return
+	case node.ND_DEFINE_VAR:
+		gen(n.Left)
+		return
 	}
 
 	gen(n.Left)
