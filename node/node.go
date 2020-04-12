@@ -7,12 +7,13 @@ import (
 
 	"github.com/ryota-sakamoto/c8go/token"
 	"github.com/ryota-sakamoto/c8go/util"
+	"github.com/ryota-sakamoto/c8go/vars"
 )
 
 type NodeKind int
 
 const (
-	ND_UNKNOWN NodeKind = iota + 1
+	_ NodeKind = iota
 	ND_ADD
 	ND_SUB
 	ND_DEREF
@@ -44,32 +45,13 @@ const (
 	ND_BLOCK // {}
 )
 
-func (nk NodeKind) String() string {
-	switch nk {
-	case ND_ADD:
-		return "ND_ADD"
-	case ND_SUB:
-		return "ND_SUB"
-	case ND_MUL:
-		return "ND_MUL"
-	case ND_DIV:
-		return "ND_DIV"
-	case ND_NUM:
-		return "ND_NUM"
-	case ND_RETURN:
-		return "ND_RETURN"
-	default:
-		return "Unknown"
-	}
-}
-
 type Node struct {
 	Kind             NodeKind
 	Left             *Node
 	Right            *Node
 	Block            []*Node
 	Val              int
-	Offset           int
+	Variable         vars.Variable
 	Name             string
 	Args             []*Node
 	DefineArgsOffset []int
@@ -118,10 +100,10 @@ func NewNodeNum(n int) *Node {
 	return &node
 }
 
-func NewNodeLVar(offset int) *Node {
+func NewNodeLVar(v vars.Variable) *Node {
 	node := Node{
-		Kind:   ND_LVAR,
-		Offset: offset,
+		Kind:     ND_LVAR,
+		Variable: v,
 	}
 
 	return &node
@@ -184,17 +166,17 @@ func (np *NodeParser) Program() ([]*Node, error) {
 				return nil, errors.WithStack(err)
 			}
 
-			if _, ok := locals.get(name); ok {
+			if _, ok := locals.Get(name); ok {
 				return nil, util.CompileError{
 					Input:   np.token.GetInput(),
 					Message: fmt.Sprintf("%s is already defined.", name),
 					Pos:     np.token.GetPos(),
 				}
 			}
-			locals.set(name)
-			offset, _ := locals.get(name)
+			locals.Set(vars.NewVariable(name, vars.IntType))
+			variable, _ := locals.Get(name)
 
-			args = append(args, offset)
+			args = append(args, variable.Offset)
 		}
 
 		if err := np.token.ConsumeReserved(")"); err != nil {
@@ -334,19 +316,41 @@ func (np *NodeParser) Stmt() (*Node, error) {
 			return nil, errors.WithStack(err)
 		}
 
+		head := vars.Variable{}
+		current := &head
+		isPointerType := false
+		for np.token.Expect("*") {
+			if err := np.token.Consume(); err != nil {
+				return nil, errors.WithStack(err)
+			}
+			isPointerType = true
+
+			next := vars.Variable{}
+			current.Type = vars.PointerType
+			current.Pointer = &next
+			current = &next
+		}
+
 		name, err := np.token.ConsumeIndent()
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 
-		if _, ok := locals.get(name); ok {
+		if _, ok := locals.Get(name); ok {
 			return nil, util.CompileError{
 				Input:   np.token.GetInput(),
 				Message: fmt.Sprintf("%s is already defined.", name),
 				Pos:     np.token.GetPos(),
 			}
 		}
-		locals.set(name)
+
+		if isPointerType {
+			head.Name = name
+			current.Type = vars.IntType
+		} else {
+			head = vars.NewVariable(name, vars.IntType)
+		}
+		locals.Set(head)
 
 		if err := np.token.ConsumeReserved(";"); err != nil {
 			return nil, errors.WithStack(err)
@@ -606,12 +610,12 @@ func (np *NodeParser) Unary() (*Node, error) {
 			return nil, errors.WithStack(err)
 		}
 
-		left, err := np.Unary()
+		right, err := np.Unary()
 		if err != nil {
 			return nil, err
 		}
 
-		return NewNode(ND_DEREF, left, nil), nil
+		return NewNode(ND_DEREF, nil, right), nil
 	}
 
 	if np.token.Expect("&") {
@@ -694,33 +698,15 @@ func (np *NodeParser) Primary() (*Node, error) {
 		return NewNodeCallFunc(name, args), nil
 	}
 
-	if offset, ok := locals.get(name); !ok {
+	if variable, ok := locals.Get(name); !ok {
 		return nil, util.CompileError{
 			Input:   np.token.GetInput(),
 			Message: fmt.Sprintf("%s is not defined.", name),
 			Pos:     np.token.GetPos(),
 		}
 	} else {
-		return NewNodeLVar(offset), nil
+		return NewNodeLVar(variable), nil
 	}
 }
 
-var locals = localVariale{
-	vars:      map[string]int{},
-	maxOffset: 0,
-}
-
-type localVariale struct {
-	vars      map[string]int
-	maxOffset int
-}
-
-func (l localVariale) get(name string) (int, bool) {
-	v, ok := l.vars[name]
-	return v, ok
-}
-
-func (l *localVariale) set(name string) {
-	l.maxOffset = l.maxOffset + 8
-	l.vars[name] = l.maxOffset
-}
+var locals = vars.NewLocalVariales()

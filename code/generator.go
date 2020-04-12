@@ -181,6 +181,7 @@ func gen(n *node.Node) {
 		genLabel(n.Left)
 		return
 	case node.ND_DEREF:
+		gen(n.Right)
 		fmt.Println("    pop rax")
 		fmt.Println("    mov rax, [rax]")
 		fmt.Println("    push rax")
@@ -228,12 +229,30 @@ func gen(n *node.Node) {
 }
 
 func genLabel(n *node.Node) {
-	if n.Kind != node.ND_LVAR {
-		panic("")
+	switch n.Kind {
+	case node.ND_LVAR:
+		fmt.Println("    mov rax, rbp")
+		fmt.Println(fmt.Sprintf("    sub rax, %d", n.Variable.Offset))
+		fmt.Println("    push rax")
+	case node.ND_DEREF:
+		current := n.Right
+
+		fmt.Println("    mov rax, rbp")
+		fmt.Println(fmt.Sprintf("    sub rax, %d", current.Variable.Offset))
+		fmt.Println("    push rax")
+
+		for current.Variable.IsPointerType() {
+			if err := current.Variable.Next(); err != nil {
+				panic(err)
+			}
+			fmt.Println("    pop rax")
+			fmt.Println("    mov rax, [rax]")
+			fmt.Println("    push rax")
+		}
+		// log.Println(current.Variable)
+	default:
+		panic(fmt.Sprintf("%s is not supported type", n.Kind))
 	}
-	fmt.Println("    mov rax, rbp")
-	fmt.Println(fmt.Sprintf("    sub rax, %d", n.Offset))
-	fmt.Println("    push rax")
 }
 
 var counter = 0
