@@ -180,3 +180,8 @@ check 8 "int main() {\
     b = b - 1;\
     return *b;\
 }"
+
+check 4 "int main() {\
+    int a;\
+    return sizeof(a);\
+}"

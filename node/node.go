@@ -592,6 +592,24 @@ func (np *NodeParser) Mul() (*Node, error) {
 }
 
 func (np *NodeParser) Unary() (*Node, error) {
+	if np.token.Expect("sizeof") {
+		err := np.token.ConsumeReserved("sizeof")
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		right, err := np.Unary()
+		if err != nil {
+			return nil, err
+		}
+
+		if right.Variable.Type == vars.PointerType {
+			return NewNodeNum(8), nil
+		}
+
+		return NewNodeNum(4), nil
+	}
+
 	err := np.token.ConsumeReserved("+")
 	if err == nil {
 		return np.Primary()
