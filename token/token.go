@@ -138,7 +138,7 @@ func Tokenize(s string) (*Token, error) {
 	}
 	current := &token
 	for len(s) > 0 {
-		if s[:1] == " " {
+		if s[:1] == " " || s[:1] == "\n" {
 			s = s[1:]
 			current.pos++
 			continue
