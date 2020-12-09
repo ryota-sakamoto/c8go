@@ -1,5 +1,5 @@
 build:
-	go build -o c8go *.go
+	go build -o bin/c8go cmd/c8go/main.go
 
 test:
 	make build

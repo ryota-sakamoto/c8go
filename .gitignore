@@ -1,6 +1,7 @@
 a
 a.s
 *.c
-c8go
 .gdb_history
 peda-session-*
+bin/
+tmp/

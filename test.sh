@@ -1,14 +1,19 @@
 #!/bin/sh
 
-echo "int one() { return 1; }" > one.c
-echo "int two(int a, int b) { return a + b; }" > two.c
-cat <<EOF > p.c
+mkdir -p tmp
+CURRENT_DIR=$(pwd)
+
+echo "int one() { return 1; }" > tmp/one.c
+echo "int two(int a, int b) { return a + b; }" > tmp/two.c
+cat <<EOF > tmp/p.c
 #include <stdio.h>
 void p(int v) { printf("%d\n", v); }
 EOF
 
 function run() {
-    ./c8go "$@" > a.s
+    cd "$CURRENT_DIR"/tmp
+
+    ../bin/c8go "$@" > a.s
     if [ $? = 1 ]; then
         cat a.s
         return
