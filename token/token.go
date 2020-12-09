@@ -212,18 +212,17 @@ func Tokenize(s string) (*Token, error) {
 		}
 
 		isType := false
-		typeLen := 0
 		for _, v := range []string{"int"} {
 			if len(s) >= len(v) && s[:len(v)] == v {
+				current = newToken(TK_RESERVED, current, s, len(v))
+				s = s[len(v):]
+				current.pos += len(v)
+
 				isType = true
-				typeLen = len(v)
 				break
 			}
 		}
 		if isType {
-			current = newToken(TK_RESERVED, current, s, typeLen)
-			s = s[typeLen:]
-			current.pos += typeLen
 			continue
 		}
 
