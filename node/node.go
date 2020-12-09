@@ -525,6 +525,9 @@ func (np *NodeParser) Add() (*Node, error) {
 			if err != nil {
 				return nil, err
 			}
+			if node.Variable.Type == vars.PointerType {
+				right.Val *= 4
+			}
 			node = NewNode(ND_ADD, node, right)
 			continue
 		}
@@ -538,6 +541,9 @@ func (np *NodeParser) Add() (*Node, error) {
 			right, err := np.Mul()
 			if err != nil {
 				return nil, err
+			}
+			if node.Variable.Type == vars.PointerType {
+				right.Val *= 4
 			}
 			node = NewNode(ND_SUB, node, right)
 			continue

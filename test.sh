@@ -9,6 +9,17 @@ cat <<EOF > tmp/p.c
 #include <stdio.h>
 void p(int v) { printf("%d\n", v); }
 EOF
+cat <<EOF > tmp/alloc4.c
+#include <stdlib.h>
+void alloc4(int **base, int a, int b, int c, int d) {
+    int *pointer = (int *)malloc(sizeof(int)*4);
+    *base = pointer;
+    *(pointer) = a;
+    *(pointer+1) = b;
+    *(pointer+2) = c;
+    *(pointer+3) = d;
+}
+EOF
 
 function run() {
     cd "$CURRENT_DIR"/tmp
@@ -19,7 +30,7 @@ function run() {
         return
     fi
 
-    gcc -g -O0 -o a a.s one.c two.c p.c
+    gcc -g -O0 -o a a.s one.c two.c p.c alloc4.c
     ./a
 }
 
@@ -159,4 +170,13 @@ check 3 "int main() {\
     y = &x;\
     *y = 3;\
     return *y;\
+}"
+
+check 8 "int main() {\
+    int *a;\
+    alloc4(&a, 1, 2, 4, 8);\
+    int *b;\
+    b = a + 4;\
+    b = b - 1;\
+    return *b;\
 }"
