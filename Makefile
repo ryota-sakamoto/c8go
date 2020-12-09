@@ -7,4 +7,4 @@ test:
 	make clean
 
 clean:
-	rm a.s a *.c
+	rm -rf bin tmp
