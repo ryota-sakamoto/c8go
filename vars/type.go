@@ -28,10 +28,11 @@ func NewLocalVariales() LocalVariales {
 }
 
 type Variable struct {
-	Name    string
-	Type    Type
-	Pointer *Variable
-	Offset  int
+	Name      string
+	Type      Type
+	Pointer   *Variable
+	Offset    int
+	ArraySize int
 }
 
 func NewVariable(name string, t Type) Variable {
@@ -62,9 +63,10 @@ const (
 	_ Type = iota
 	IntType
 	PointerType
+	ArrayType
 )
 
-var s = []string{"Unknown", "IntType", "PointerType"}
+var s = []string{"Unknown", "IntType", "PointerType", "ArrayType"}
 
 func (t Type) String() string {
 	return s[t]

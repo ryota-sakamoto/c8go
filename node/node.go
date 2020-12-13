@@ -344,7 +344,28 @@ func (np *NodeParser) Stmt() (*Node, error) {
 			}
 		}
 
-		if isPointerType {
+		if np.token.Expect("[") {
+			err := np.token.ConsumeReserved("[")
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+
+			n, err := np.token.ConsumeNumber()
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+
+			err = np.token.ConsumeReserved("]")
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+
+			head = vars.Variable{
+				Name:      name,
+				Type:      vars.ArrayType,
+				ArraySize: n,
+			}
+		} else if isPointerType {
 			head.Name = name
 			current.Type = vars.IntType
 		} else {
@@ -603,11 +624,14 @@ func (np *NodeParser) Unary() (*Node, error) {
 			return nil, err
 		}
 
-		if right.Variable.Type == vars.PointerType {
+		switch right.Variable.Type {
+		case vars.PointerType:
 			return NewNodeNum(8), nil
+		case vars.ArrayType:
+			return NewNodeNum(right.Variable.ArraySize * 4), nil
+		default:
+			return NewNodeNum(4), nil
 		}
-
-		return NewNodeNum(4), nil
 	}
 
 	err := np.token.ConsumeReserved("+")

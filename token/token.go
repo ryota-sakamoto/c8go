@@ -145,7 +145,7 @@ func Tokenize(s string) (*Token, error) {
 		}
 
 		isReserved := false
-		for _, v := range []string{"+", "-", "*", "&", "/", "(", ")", ";", "{", "}", ","} {
+		for _, v := range []string{"+", "-", "*", "&", "/", "(", ")", ";", "{", "}", ",", "[", "]"} {
 			if s[:1] == v {
 				isReserved = true
 				break

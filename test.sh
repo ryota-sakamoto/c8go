@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 mkdir -p tmp
 CURRENT_DIR=$(pwd)
@@ -227,6 +227,13 @@ EOF
 check 4 << EOF
 int main() {
     int a;
+    return sizeof(a);
+}
+EOF
+
+check 20 << EOF
+int main() {
+    int a[5];
     return sizeof(a);
 }
 EOF
