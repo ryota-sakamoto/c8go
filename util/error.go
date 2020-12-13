@@ -18,21 +18,26 @@ type CompileError struct {
 	Input     string
 	Message   string
 	Pos       int
+	Line      int
 }
 
 func (t CompileError) Error() string {
-	s := `compile error: %s
+	s := fmt.Sprintf(`compile error: %s
 ----------
-%s
-%s
-%s
-----------`
+`, t.errorType)
+	for i, v := range strings.Split(t.Input, "\n") {
+		s += fmt.Sprintf("%s\n", v)
+		if t.Line == i {
+			s += fmt.Sprintf("%s\n%s\n", strings.Repeat("~", t.Pos-1)+"^", t.Message)
+		}
+	}
 
-	return fmt.Sprintf(s, t.errorType, t.Input, strings.Repeat("~", t.Pos-1)+"^", t.Message)
+	return s
 }
 
-func (t *CompileError) New(input string, message string, pos int) error {
+func (t *CompileError) New(input string, message string, pos int, line int) error {
 	t.Pos = pos
+	t.Line = line
 	t.Input = input
 	t.Message = message
 	return t

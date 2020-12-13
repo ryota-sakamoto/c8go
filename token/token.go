@@ -48,6 +48,7 @@ type Token struct {
 	len  int
 
 	input string
+	line  int
 	pos   int
 }
 
@@ -138,9 +139,16 @@ func Tokenize(s string) (*Token, error) {
 	}
 	current := &token
 	for len(s) > 0 {
-		if s[:1] == " " || s[:1] == "\n" {
+		if s[:1] == " " {
 			s = s[1:]
 			current.pos++
+			continue
+		}
+
+		if s[:1] == "\n" {
+			s = s[1:]
+			current.line++
+			current.pos = 0
 			continue
 		}
 
@@ -288,6 +296,7 @@ func newToken(kind TokenKind, current *Token, s string, len int) *Token {
 		s:     s,
 		len:   len,
 		pos:   current.pos,
+		line:  current.line,
 	}
 	current.next = &next
 
@@ -295,5 +304,5 @@ func newToken(kind TokenKind, current *Token, s string, len int) *Token {
 }
 
 func (t *Token) NewTokenError(e util.CompileError, format string, a ...interface{}) error {
-	return e.New(t.input, fmt.Sprintf(format, a...), t.pos)
+	return e.New(t.input, fmt.Sprintf(format, a...), t.pos, t.line)
 }
