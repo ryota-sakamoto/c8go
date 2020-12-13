@@ -15,8 +15,14 @@ func (l LocalVariales) Get(name string) (Variable, bool) {
 }
 
 func (l *LocalVariales) Set(v Variable) {
-	l.maxOffset = l.maxOffset + 8
-	v.Offset = l.maxOffset
+	switch v.Type {
+	case ArrayType:
+		v.Offset = l.maxOffset + 8
+		l.maxOffset += 8 * v.ArraySize
+	default:
+		v.Offset = l.maxOffset + 8
+		l.maxOffset += 8
+	}
 	l.vars[v.Name] = v
 }
 

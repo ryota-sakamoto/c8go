@@ -52,6 +52,7 @@ type Node struct {
 	Block            []*Node
 	Val              int
 	Variable         vars.Variable
+	ArrayIndex       int
 	Name             string
 	Args             []*Node
 	DefineArgsOffset []int
@@ -753,6 +754,27 @@ func (np *NodeParser) Primary() (*Node, error) {
 			Pos:     np.token.GetPos(),
 		}
 	} else {
+		if variable.Type == vars.ArrayType && np.token.Expect("[") {
+			if err := np.token.ConsumeReserved("["); err != nil {
+				return nil, errors.WithStack(err)
+			}
+
+			n, err := np.token.ConsumeNumber()
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+
+			if err := np.token.ConsumeReserved("]"); err != nil {
+				return nil, errors.WithStack(err)
+			}
+
+			return &Node{
+				Kind:       ND_LVAR,
+				Variable:   variable,
+				ArrayIndex: n,
+			}, nil
+		}
+
 		return NewNodeLVar(variable), nil
 	}
 }

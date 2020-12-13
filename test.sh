@@ -237,3 +237,13 @@ int main() {
     return sizeof(a);
 }
 EOF
+
+check 45 << EOF
+int main() {
+    int a[5];
+    a[0] = 10;
+    a[1] = 15;
+    a[1] = a[1] + a[0] * 3;
+    return a[1];
+}
+EOF

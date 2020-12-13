@@ -232,7 +232,7 @@ func genLabel(n *node.Node) {
 	switch n.Kind {
 	case node.ND_LVAR:
 		fmt.Println("    mov rax, rbp")
-		fmt.Println(fmt.Sprintf("    sub rax, %d", n.Variable.Offset))
+		fmt.Println(fmt.Sprintf("    sub rax, %d", n.Variable.Offset+n.ArrayIndex*8))
 		fmt.Println("    push rax")
 	case node.ND_DEREF:
 		current := n.Right
